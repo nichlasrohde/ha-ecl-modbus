@@ -38,6 +38,8 @@ from .const import (
     CONF_ENABLE_IP_ADDRESS,
     CONF_ENABLE_MAC_ADDRESS,
     CONF_ENABLE_VALVE_POSITION,
+    CONF_ENABLE_HEAT_FLOW_REF,
+    CONF_ENABLE_HEAT_WEATHER_REF,
 )
 
 _LOGGER = logging.getLogger(__name__)
