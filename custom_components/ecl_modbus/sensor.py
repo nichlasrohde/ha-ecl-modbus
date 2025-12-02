@@ -45,7 +45,7 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 # Home Assistant will poll all entities in this platform using this interval
-SCAN_INTERVAL = timedelta(seconds=5)
+SCAN_INTERVAL = timedelta(seconds=30)
 
 # Temperature sensor registers (manual addresses from the ECL documentation)
 REG_S1_MANUAL = 4000
