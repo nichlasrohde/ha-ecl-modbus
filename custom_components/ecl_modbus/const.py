@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+from homeassistant.const import Platform  # 👈 NY import
+
 DOMAIN = "ecl_modbus"
+
+# Hvilke platforme integrationen bruger (lige nu kun sensor)
+PLATFORMS: list[Platform] = [Platform.SENSOR]  # 👈 NY konstant
 
 # Konfiguration (setup via config_flow)
 CONF_BAUDRATE = "baudrate"
