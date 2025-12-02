@@ -2,6 +2,5 @@
   "name": "ECL Modbus",
   "content_in_root": false,
   "render_readme": true,
-  "domains": ["ecl_modbus"],
-  "image": "https://raw.githubusercontent.com/nichlasrohde/ha-ecl-modbus/main/logo.png"
+  "domains": ["ecl_modbus"]
 }
