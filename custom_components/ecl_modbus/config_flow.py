@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Config flow and options flow for the ECL Modbus integration."""
+
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -21,28 +23,21 @@ from .const import (
     CONF_ENABLE_S4,
     CONF_ENABLE_S5,
     CONF_ENABLE_S6,
-    CONF_ENABLE_TR1,
-    CONF_ENABLE_TR2,
-    CONF_ENABLE_R1,
-    CONF_ENABLE_R2,
-    CONF_ENABLE_P1_DUTY,
-    CONF_ENABLE_P1_FREQ,
-    CONF_ENABLE_STEPPER1,
-    CONF_ENABLE_STEPPER2,
 )
 
 
 class EclModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Config flow til ECL Modbus."""
+    """Config flow for setting up ECL Modbus."""
 
     VERSION = 1
 
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
-        """Første trin i opsætningen."""
+        """First step when a user adds the integration."""
         if user_input is not None:
-            # Kun én ECL-instans giver mening → brug fast unique_id
+            # Only one ECL instance makes sense → fixed unique_id
             await self.async_set_unique_id(DOMAIN)
             self._abort_if_unique_id_configured()
+
             return self.async_create_entry(
                 title=user_input.get(CONF_NAME, DEFAULT_NAME),
                 data=user_input,
@@ -51,7 +46,7 @@ class EclModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = vol.Schema(
             {
                 vol.Optional(CONF_NAME, default=DEFAULT_NAME): str,
-                vol.Required(CONF_PORT): str,  # fx /dev/ttyUSB1 eller /dev/ttyUSB0
+                vol.Required(CONF_PORT): str,  # e.g. /dev/ttyUSB0 or /dev/ttyUSB1
                 vol.Optional(CONF_BAUDRATE, default=DEFAULT_BAUDRATE): int,
                 vol.Optional(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): int,
             }
@@ -62,63 +57,42 @@ class EclModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> "EclModbusOptionsFlow":
-        """Returnér options flow handler."""
+        """Return the options flow handler for an existing entry."""
         return EclModbusOptionsFlow(config_entry)
 
 
 class EclModbusOptionsFlow(config_entries.OptionsFlow):
-    """Håndterer indstillinger (Options) for en eksisterende ECL Modbus entry."""
+    """Handle options (which sensors are enabled) for an existing entry."""
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         self._entry = config_entry
 
     async def async_step_init(self, user_input: dict | None = None) -> FlowResult:
-        """Standard entry point – sender videre til options step."""
+        """Entry point for the options flow."""
         return await self.async_step_options(user_input)
 
     async def async_step_options(self, user_input: dict | None = None) -> FlowResult:
-        """Form med hvilke sensorer der skal aktiveres."""
+        """Show the form where the user chooses which sensors to enable."""
         if user_input is not None:
-            # Gemmer options som entry.options
+            # Save options as entry.options
             return self.async_create_entry(title="", data=user_input)
 
         options = self._entry.options
 
         def opt(key: str, default: bool) -> bool:
+            """Helper to read a boolean option with a default."""
             return bool(options.get(key, default))
 
-        # Defaults: vi antager at S3 og S4 er vigtigst; outputs er off som udgangspunkt
+        # Defaults: we assume S3 and S4 are the most useful ones
         data_schema = vol.Schema(
             {
-                # Temperatur sensorer
+                # Temperature sensors S1–S6
                 vol.Optional(CONF_ENABLE_S1, default=opt(CONF_ENABLE_S1, False)): bool,
                 vol.Optional(CONF_ENABLE_S2, default=opt(CONF_ENABLE_S2, False)): bool,
                 vol.Optional(CONF_ENABLE_S3, default=opt(CONF_ENABLE_S3, True)): bool,
                 vol.Optional(CONF_ENABLE_S4, default=opt(CONF_ENABLE_S4, True)): bool,
                 vol.Optional(CONF_ENABLE_S5, default=opt(CONF_ENABLE_S5, False)): bool,
                 vol.Optional(CONF_ENABLE_S6, default=opt(CONF_ENABLE_S6, False)): bool,
-
-                # Outputs
-                vol.Optional(CONF_ENABLE_TR1, default=opt(CONF_ENABLE_TR1, False)): bool,
-                vol.Optional(CONF_ENABLE_TR2, default=opt(CONF_ENABLE_TR2, False)): bool,
-                vol.Optional(CONF_ENABLE_R1, default=opt(CONF_ENABLE_R1, False)): bool,
-                vol.Optional(CONF_ENABLE_R2, default=opt(CONF_ENABLE_R2, False)): bool,
-                vol.Optional(
-                    CONF_ENABLE_P1_DUTY,
-                    default=opt(CONF_ENABLE_P1_DUTY, False),
-                ): bool,
-                vol.Optional(
-                    CONF_ENABLE_P1_FREQ,
-                    default=opt(CONF_ENABLE_P1_FREQ, False),
-                ): bool,
-                vol.Optional(
-                    CONF_ENABLE_STEPPER1,
-                    default=opt(CONF_ENABLE_STEPPER1, False),
-                ): bool,
-                vol.Optional(
-                    CONF_ENABLE_STEPPER2,
-                    default=opt(CONF_ENABLE_STEPPER2, False),
-                ): bool,
             }
         )
 
