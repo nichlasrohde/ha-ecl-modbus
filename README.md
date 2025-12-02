@@ -33,7 +33,11 @@ Current supported features:
 
 ### Install via HACS
 
-If you want to use this code with Home Assistant, you should be able to install it with HACS by adding this repo.
+The easiest way to install this integration is through HACS.
+
+Click the button below:
+
+[![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=nichlasrohde&repository=ha-ecl-modbus&category=integration)
 
 ### Manual installation
 1. Download the latest release ZIP  
