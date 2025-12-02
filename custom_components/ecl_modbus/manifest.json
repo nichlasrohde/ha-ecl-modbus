@@ -1,13 +1,11 @@
 {
   "domain": "ecl_modbus",
   "name": "ECL Modbus",
-  "version": "0.5.9",
+  "version": "0.5.10",
   "documentation": "https://github.com/nichlasrohde/ha-ecl-modbus",
   "requirements": [],
   "codeowners": ["@nichlasrohde"],
   "config_flow": true,
   "iot_class": "local_polling",
-  "integration_type": "hub",
-  "icon": "icons/icon.png",
-  "logo": "icons/logo.png"
+  "integration_type": "hub"
 }
