@@ -33,9 +33,7 @@ Current supported features:
 
 ### Install via HACS
 
-This integration can be installed as a custom repository in HACS:
-
-[![Install via HACS](https://img.shields.io/badge/HACS-Custom%20Repository-blue.svg)](https://hacs.xyz/)
+If you want to use this code with Home Assistant, you should be able to install it with HACS by adding this repo
 
 ### Manual installation
 1. Download the latest release ZIP  
