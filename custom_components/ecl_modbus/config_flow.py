@@ -122,11 +122,11 @@ class EclModbusOptionsFlow(config_entries.OptionsFlow):
                     default=opt(CONF_ENABLE_STEPPER2, False),
                 ): bool,
 
-                # Poll interval i sekunder
+                # Poll interval i sekunder (min 5 sek, max 3600 sek)
                 vol.Optional(
                     CONF_SCAN_INTERVAL,
                     default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
-                ): int,
+                ): vol.All(int, vol.Clamp(min=5, max=3600)),
             }
         )
 
