@@ -404,39 +404,59 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Sæt sensorer op ud fra en config entry (UI-opsætning)."""
-    name = entry.data.get(CONF_NAME, DEFAULT_NAME)
+    from homeassistant.const import CONF_NAME  # lokal import for at undgå cirkel
 
+    name = entry.data.get(CONF_NAME, DEFAULT_NAME)
     hub = get_hub_for_entry(hass, entry)
+
+    options = entry.options
+
+    def opt(key: str, default: bool) -> bool:
+        return bool(options.get(key, default))
 
     entities: list[SensorEntity] = []
 
-    # Temperatur-sensorer S1-S6
-    entities.extend(
-        [
+    # ---------- Temperatur-sensorer S1-S6 ----------
+    if opt(CONF_ENABLE_S1, False):
+        entities.append(
             EclModbusTemperatureSensor(
                 hub, f"{name} S1 temperatur", REG_S1_MANUAL, "s1_temp"
-            ),
+            )
+        )
+    if opt(CONF_ENABLE_S2, False):
+        entities.append(
             EclModbusTemperatureSensor(
                 hub, f"{name} S2 temperatur", REG_S2_MANUAL, "s2_temp"
-            ),
+            )
+        )
+    if opt(CONF_ENABLE_S3, True):
+        entities.append(
             EclModbusTemperatureSensor(
                 hub, f"{name} S3 temperatur", REG_S3_MANUAL, "s3_temp"
-            ),
+            )
+        )
+    if opt(CONF_ENABLE_S4, True):
+        entities.append(
             EclModbusTemperatureSensor(
                 hub, f"{name} S4 temperatur", REG_S4_MANUAL, "s4_temp"
-            ),
+            )
+        )
+    if opt(CONF_ENABLE_S5, False):
+        entities.append(
             EclModbusTemperatureSensor(
                 hub, f"{name} S5 temperatur", REG_S5_MANUAL, "s5_temp"
-            ),
+            )
+        )
+    if opt(CONF_ENABLE_S6, False):
+        entities.append(
             EclModbusTemperatureSensor(
                 hub, f"{name} S6 temperatur", REG_S6_MANUAL, "s6_temp"
-            ),
-        ]
-    )
+            )
+        )
 
-    # Override outputs 6200+ (triac, relæ, pumpe, stepper)
-    entities.extend(
-        [
+    # ---------- Override outputs 6200+ ----------
+    if opt(CONF_ENABLE_TR1, False):
+        entities.append(
             EclModbusOutputSensor(
                 hub=hub,
                 name=f"{name} TR1 triac override",
@@ -445,7 +465,11 @@ async def async_setup_entry(
                 value_type="int16",
                 scale=0.1,  # -150.0 .. 150.0 %
                 unit=PERCENTAGE,
-            ),
+            )
+        )
+
+    if opt(CONF_ENABLE_TR2, False):
+        entities.append(
             EclModbusOutputSensor(
                 hub=hub,
                 name=f"{name} TR2 triac override",
@@ -454,7 +478,11 @@ async def async_setup_entry(
                 value_type="int16",
                 scale=0.1,
                 unit=PERCENTAGE,
-            ),
+            )
+        )
+
+    if opt(CONF_ENABLE_R1, False):
+        entities.append(
             EclModbusOutputSensor(
                 hub=hub,
                 name=f"{name} R1 relay override",
@@ -462,7 +490,11 @@ async def async_setup_entry(
                 unique_suffix="r1_override",
                 value_type="int16",
                 scale=1.0,
-            ),
+            )
+        )
+
+    if opt(CONF_ENABLE_R2, False):
+        entities.append(
             EclModbusOutputSensor(
                 hub=hub,
                 name=f"{name} R2 relay override",
@@ -470,7 +502,11 @@ async def async_setup_entry(
                 unique_suffix="r2_override",
                 value_type="int16",
                 scale=1.0,
-            ),
+            )
+        )
+
+    if opt(CONF_ENABLE_P1_DUTY, False):
+        entities.append(
             EclModbusOutputSensor(
                 hub=hub,
                 name=f"{name} Pump P1 dutycycle",
@@ -479,7 +515,11 @@ async def async_setup_entry(
                 value_type="float",
                 scale=1.0,
                 unit=PERCENTAGE,
-            ),
+            )
+        )
+
+    if opt(CONF_ENABLE_P1_FREQ, False):
+        entities.append(
             EclModbusOutputSensor(
                 hub=hub,
                 name=f"{name} Pump P1 frequency",
@@ -488,7 +528,11 @@ async def async_setup_entry(
                 value_type="float",
                 scale=1.0,
                 unit=UnitOfFrequency.HERTZ,
-            ),
+            )
+        )
+
+    if opt(CONF_ENABLE_STEPPER1, False):
+        entities.append(
             EclModbusOutputSensor(
                 hub=hub,
                 name=f"{name} Stepper 1 position",
@@ -497,7 +541,11 @@ async def async_setup_entry(
                 value_type="float",
                 scale=1.0,
                 unit=PERCENTAGE,
-            ),
+            )
+        )
+
+    if opt(CONF_ENABLE_STEPPER2, False):
+        entities.append(
             EclModbusOutputSensor(
                 hub=hub,
                 name=f"{name} Stepper 2 position",
@@ -506,9 +554,8 @@ async def async_setup_entry(
                 value_type="float",
                 scale=1.0,
                 unit=PERCENTAGE,
-            ),
-        ]
-    )
+            )
+        )
 
     async_add_entities(entities, update_before_add=True)
 
