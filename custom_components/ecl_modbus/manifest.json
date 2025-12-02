@@ -8,5 +8,6 @@
   "config_flow": true,
   "iot_class": "local_polling",
   "integration_type": "hub",
-  "icon": "icon.png"
+  "icon": "icons/icon.png",
+  "logo": "icons/logo.png"
 }
