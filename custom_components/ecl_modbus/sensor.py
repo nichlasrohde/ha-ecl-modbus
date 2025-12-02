@@ -273,7 +273,14 @@ class EclModbusTemperatureSensor(SensorEntity):
         self._attr_extra_state_attributes = {
             "ecl_modbus_register": reg_address_manual
         }
-        self._attr_scan_interval = timedelta(seconds=scan_interval_sec)
+
+        # 👇 NY linje: gem poll-interval i egen variabel
+        self._scan_interval = timedelta(seconds=scan_interval_sec)
+
+    @property
+    def scan_interval(self) -> timedelta:
+        """Hvor tit Home Assistant skal opdatere denne sensor."""
+        return self._scan_interval
 
     @property
     def device_info(self) -> dict:
@@ -348,13 +355,18 @@ class EclModbusOutputSensor(SensorEntity):
         }
 
         # Individuelt poll-interval fra options
-        self._attr_scan_interval = timedelta(seconds=scan_interval_sec)
+        self._scan_interval = timedelta(seconds=scan_interval_sec)
 
         if unit is not None:
             self._attr_native_unit_of_measurement = unit
 
         if device_class is not None:
             self._attr_device_class = device_class
+
+    @property
+    def scan_interval(self) -> timedelta:
+        """Hvor tit Home Assistant skal polle denne output-sensor."""
+        return self._scan_interval
 
     @property
     def device_info(self) -> dict:
