@@ -1,7 +1,7 @@
 {
   "domain": "ecl_modbus",
   "name": "ECL Modbus",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "documentation": "https://github.com/nichlasrohde/ha-ecl-modbus",
   "requirements": [],
   "codeowners": ["@nichlasrohde"],
