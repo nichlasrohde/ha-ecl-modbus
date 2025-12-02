@@ -1,0 +1,12 @@
+{
+  "domain": "ecl_modbus",
+  "name": "ECL Modbus",
+  "version": "0.1.0",
+  "documentation": "https://github.com/dit-brugernavn/ecl_modbus", 
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": ["@dit-github-brugernavn"],
+  "iot_class": "local_polling",
+  "integration_type": "hub",
+  "config_flow": true
+}
