@@ -2,13 +2,14 @@ from __future__ import annotations
 
 DOMAIN = "ecl_modbus"
 
-# Platforms
+# Denne integration har kun én platform: sensor
 PLATFORMS: list[str] = ["sensor"]
 
-# Konfiguration (setup via config_flow)
+# Konfigurationsnøgler
 CONF_BAUDRATE = "baudrate"
 CONF_SLAVE_ID = "slave_id"
 
+# Defaults
 DEFAULT_NAME = "ECL Modbus"
 DEFAULT_BAUDRATE = 38400
 DEFAULT_SLAVE_ID = 5
@@ -30,7 +31,3 @@ CONF_ENABLE_P1_DUTY = "enable_p1_duty"
 CONF_ENABLE_P1_FREQ = "enable_p1_freq"
 CONF_ENABLE_STEPPER1 = "enable_stepper1"
 CONF_ENABLE_STEPPER2 = "enable_stepper2"
-
-# Fælles poll-interval (sekunder) via options-flow
-CONF_SCAN_INTERVAL = "scan_interval"
-DEFAULT_SCAN_INTERVAL = 30

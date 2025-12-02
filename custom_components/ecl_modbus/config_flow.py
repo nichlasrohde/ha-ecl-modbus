@@ -29,8 +29,6 @@ from .const import (
     CONF_ENABLE_P1_FREQ,
     CONF_ENABLE_STEPPER1,
     CONF_ENABLE_STEPPER2,
-    CONF_SCAN_INTERVAL,
-    DEFAULT_SCAN_INTERVAL,
 )
 
 
@@ -53,7 +51,7 @@ class EclModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = vol.Schema(
             {
                 vol.Optional(CONF_NAME, default=DEFAULT_NAME): str,
-                vol.Required(CONF_PORT): str,  # fx /dev/ttyUSB1
+                vol.Required(CONF_PORT): str,  # fx /dev/ttyUSB1 eller /dev/ttyUSB0
                 vol.Optional(CONF_BAUDRATE, default=DEFAULT_BAUDRATE): int,
                 vol.Optional(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): int,
             }
@@ -121,12 +119,6 @@ class EclModbusOptionsFlow(config_entries.OptionsFlow):
                     CONF_ENABLE_STEPPER2,
                     default=opt(CONF_ENABLE_STEPPER2, False),
                 ): bool,
-
-                # Poll interval i sekunder (min 5 sek, max 3600 sek)
-                vol.Optional(
-                    CONF_SCAN_INTERVAL,
-                    default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
-                ): vol.All(int, vol.Clamp(min=5, max=3600)),
             }
         )
 

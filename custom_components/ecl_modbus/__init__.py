@@ -33,10 +33,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         try:
             hub.close()
         except Exception:  # noqa: BLE001
-            # Vi logger ikke hårdt her – lukning må ikke vælte unload
+            # Lukning må ikke vælte unload
             pass
 
-    # Unload alle platforme (sensorer)
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok and DOMAIN in hass.data:
