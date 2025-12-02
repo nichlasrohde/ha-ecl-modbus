@@ -109,6 +109,14 @@ class EclModbusOptionsFlow(config_entries.OptionsFlow):
                     CONF_ENABLE_VALVE_POSITION,
                     default=opt(CONF_ENABLE_VALVE_POSITION, False),
                 ): bool,
+                vol.Optional(
+                    CONF_ENABLE_HEAT_FLOW_REF,
+                    default=opt(CONF_ENABLE_HEAT_FLOW_REF, False),
+                ): bool,
+                vol.Optional(
+                    CONF_ENABLE_HEAT_WEATHER_REF,
+                    default=opt(CONF_ENABLE_HEAT_WEATHER_REF, False),
+                ): bool,
             }
         )
 

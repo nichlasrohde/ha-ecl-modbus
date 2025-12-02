@@ -60,6 +60,10 @@ REG_ETH_MAC_MANUAL = 2110  # String32
 # Valve position register (float, %)
 REG_VALVE_POSITION_MANUAL = 21700
 
+# Heat reference registers
+REG_HEAT_FLOW_REF = 21200     # Float C (0–150°C)
+REG_HEAT_WEATHER_REF = 21206  # Float C (-150 – 150°C)
+
 
 class EclModbusHub:
     """Handle Modbus communication with the ECL controller."""
@@ -503,6 +507,28 @@ async def async_setup_entry(
                 name=f"{name} valve position",
                 reg_address_manual=REG_VALVE_POSITION_MANUAL,
                 unique_suffix="valve_position",
+            )
+        )
+
+    # Heat Flow Reference (float °C 0–150)
+    if opt(CONF_ENABLE_HEAT_FLOW_REF, False):
+        entities.append(
+            EclModbusTemperatureSensor(
+                hub,
+                f"{name} heat flow reference",
+                REG_HEAT_FLOW_REF,
+                "heat_flow_ref",
+            )
+        )
+
+    # Heat Weather Compensated Reference (float °C -150–150)
+    if opt(CONF_ENABLE_HEAT_WEATHER_REF, False):
+        entities.append(
+            EclModbusTemperatureSensor(
+                hub,
+                f"{name} heat weather compensated reference",
+                REG_HEAT_WEATHER_REF,
+                "heat_weather_ref",
             )
         )
 

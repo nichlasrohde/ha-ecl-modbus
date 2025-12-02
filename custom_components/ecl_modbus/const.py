@@ -29,3 +29,7 @@ CONF_ENABLE_S6 = "enable_s6"
 CONF_ENABLE_IP_ADDRESS = "enable_ip_address"
 CONF_ENABLE_MAC_ADDRESS = "enable_mac_address"
 CONF_ENABLE_VALVE_POSITION = "enable_valve_position"
+
+# Extra temperature reference sensors
+CONF_ENABLE_HEAT_FLOW_REF = "enable_heat_flow_ref"
+CONF_ENABLE_HEAT_WEATHER_REF = "enable_heat_weather_ref"
