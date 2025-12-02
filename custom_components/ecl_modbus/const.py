@@ -32,4 +32,4 @@ CONF_ENABLE_VALVE_POSITION = "enable_valve_position"
 
 # Extra temperature reference sensors
 CONF_ENABLE_HEAT_FLOW_REF = "enable_heat_flow_ref"
-CONF_ENABLE_HEAT_WEATHER_REF = "enable_heat_weather_ref"
+CONF_ENABLE_HEAT_RETURN_REF = "enable_heat_return_ref"

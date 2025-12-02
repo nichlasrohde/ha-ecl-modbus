@@ -27,7 +27,7 @@ from .const import (
     CONF_ENABLE_MAC_ADDRESS,
     CONF_ENABLE_VALVE_POSITION,
     CONF_ENABLE_HEAT_FLOW_REF,
-    CONF_ENABLE_HEAT_WEATHER_REF,
+    CONF_ENABLE_HEAT_RETURN_REF,
 )
 
 
@@ -116,8 +116,8 @@ class EclModbusOptionsFlow(config_entries.OptionsFlow):
                     default=opt(CONF_ENABLE_HEAT_FLOW_REF, False),
                 ): bool,
                 vol.Optional(
-                    CONF_ENABLE_HEAT_WEATHER_REF,
-                    default=opt(CONF_ENABLE_HEAT_WEATHER_REF, False),
+                    CONF_ENABLE_HEAT_RETURN_REF,
+                    default=opt(CONF_ENABLE_HEAT_RETURN_REF, False),
                 ): bool,
             }
         )

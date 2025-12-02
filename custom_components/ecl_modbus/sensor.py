@@ -64,7 +64,7 @@ REG_VALVE_POSITION_MANUAL = 21700
 
 # Heat reference registers
 REG_HEAT_FLOW_REF = 21200     # Float C (0–150°C)
-REG_HEAT_WEATHER_REF = 21206  # Float C (-150 – 150°C)
+REG_HEAT_RETURN_REF = 21210  # Float C (5 – 150°C)
 
 
 class EclModbusHub:
@@ -523,14 +523,14 @@ async def async_setup_entry(
             )
         )
 
-    # Heat Weather Compensated Reference (float °C -150–150)
-    if opt(CONF_ENABLE_HEAT_WEATHER_REF, False):
+    # Heat Return Compensated Reference (float °C 5–150)
+    if opt(CONF_ENABLE_HEAT_RETURN_REF, False):
         entities.append(
             EclModbusTemperatureSensor(
                 hub,
-                f"{name} heat weather compensated reference",
-                REG_HEAT_WEATHER_REF,
-                "heat_weather_ref",
+                f"{name} heat return reference",
+                REG_HEAT_RETURN_REF,
+                "heat_return_ref",
             )
         )
 
