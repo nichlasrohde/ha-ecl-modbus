@@ -82,5 +82,15 @@ This project is community-driven — PRs and feedback are welcome!
 
 GitHub: https://github.com/nichlasrohde/ha-ecl-modbus
 
+## 📘 Official Danfoss Modbus Documentation
+
+This integration is based on the official Modbus register list from Danfoss.
+
+📄 **Download PDF:**  
+👉 [ECL120 & ECL220 Modbus Specification (Rev 023)](./docs/IS2007%2C%20ECL120%20and%20ECL220%20Modbus%20Specification%2C%20rev%20023.pdf)
+
+The document is shared with permission from Danfoss.
+
+
 ## 📄 License
 MIT License
