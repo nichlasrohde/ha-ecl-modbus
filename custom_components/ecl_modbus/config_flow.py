@@ -29,6 +29,8 @@ from .const import (
     CONF_ENABLE_P1_FREQ,
     CONF_ENABLE_STEPPER1,
     CONF_ENABLE_STEPPER2,
+    CONF_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL,
 )
 
 
@@ -97,16 +99,19 @@ class EclModbusOptionsFlow(config_entries.OptionsFlow):
                 vol.Optional(CONF_ENABLE_S4, default=opt(CONF_ENABLE_S4, True)): bool,
                 vol.Optional(CONF_ENABLE_S5, default=opt(CONF_ENABLE_S5, False)): bool,
                 vol.Optional(CONF_ENABLE_S6, default=opt(CONF_ENABLE_S6, False)): bool,
+
                 # Outputs
                 vol.Optional(CONF_ENABLE_TR1, default=opt(CONF_ENABLE_TR1, False)): bool,
                 vol.Optional(CONF_ENABLE_TR2, default=opt(CONF_ENABLE_TR2, False)): bool,
                 vol.Optional(CONF_ENABLE_R1, default=opt(CONF_ENABLE_R1, False)): bool,
                 vol.Optional(CONF_ENABLE_R2, default=opt(CONF_ENABLE_R2, False)): bool,
                 vol.Optional(
-                    CONF_ENABLE_P1_DUTY, default=opt(CONF_ENABLE_P1_DUTY, False)
+                    CONF_ENABLE_P1_DUTY,
+                    default=opt(CONF_ENABLE_P1_DUTY, False),
                 ): bool,
                 vol.Optional(
-                    CONF_ENABLE_P1_FREQ, default=opt(CONF_ENABLE_P1_FREQ, False)
+                    CONF_ENABLE_P1_FREQ,
+                    default=opt(CONF_ENABLE_P1_FREQ, False),
                 ): bool,
                 vol.Optional(
                     CONF_ENABLE_STEPPER1,
@@ -116,6 +121,12 @@ class EclModbusOptionsFlow(config_entries.OptionsFlow):
                     CONF_ENABLE_STEPPER2,
                     default=opt(CONF_ENABLE_STEPPER2, False),
                 ): bool,
+
+                # Poll interval i sekunder
+                vol.Optional(
+                    CONF_SCAN_INTERVAL,
+                    default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+                ): int,
             }
         )
 
