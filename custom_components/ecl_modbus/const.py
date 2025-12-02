@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-# Domain
 DOMAIN = "ecl_modbus"
+
+# Platforms
+PLATFORMS: list[str] = ["sensor"]
 
 # Konfiguration (setup via config_flow)
 CONF_BAUDRATE = "baudrate"
@@ -10,10 +12,6 @@ CONF_SLAVE_ID = "slave_id"
 DEFAULT_NAME = "ECL Modbus"
 DEFAULT_BAUDRATE = 38400
 DEFAULT_SLAVE_ID = 5
-
-# Scan interval (sekunder)
-CONF_SCAN_INTERVAL = "scan_interval"
-DEFAULT_SCAN_INTERVAL = 30
 
 # Options: enable/disable temperatur-sensorer
 CONF_ENABLE_S1 = "enable_s1"
@@ -33,5 +31,6 @@ CONF_ENABLE_P1_FREQ = "enable_p1_freq"
 CONF_ENABLE_STEPPER1 = "enable_stepper1"
 CONF_ENABLE_STEPPER2 = "enable_stepper2"
 
-# Plattform-liste (bruges i __init__.py)
-PLATFORMS = ["sensor"]
+# Fælles poll-interval (sekunder) via options-flow
+CONF_SCAN_INTERVAL = "scan_interval"
+DEFAULT_SCAN_INTERVAL = 30
