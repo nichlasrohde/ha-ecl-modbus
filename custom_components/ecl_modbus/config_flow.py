@@ -23,6 +23,9 @@ from .const import (
     CONF_ENABLE_S4,
     CONF_ENABLE_S5,
     CONF_ENABLE_S6,
+    CONF_ENABLE_IP_ADDRESS,
+    CONF_ENABLE_MAC_ADDRESS,
+    CONF_ENABLE_VALVE_POSITION,
 )
 
 
@@ -83,7 +86,7 @@ class EclModbusOptionsFlow(config_entries.OptionsFlow):
             """Helper to read a boolean option with a default."""
             return bool(options.get(key, default))
 
-        # Defaults: we assume S3 and S4 are the most useful ones
+        # Defaults: S3 & S4 on, others off; extra sensors off by default
         data_schema = vol.Schema(
             {
                 # Temperature sensors S1–S6
@@ -93,6 +96,19 @@ class EclModbusOptionsFlow(config_entries.OptionsFlow):
                 vol.Optional(CONF_ENABLE_S4, default=opt(CONF_ENABLE_S4, True)): bool,
                 vol.Optional(CONF_ENABLE_S5, default=opt(CONF_ENABLE_S5, False)): bool,
                 vol.Optional(CONF_ENABLE_S6, default=opt(CONF_ENABLE_S6, False)): bool,
+                # Extra sensors: IP, MAC, valve position
+                vol.Optional(
+                    CONF_ENABLE_IP_ADDRESS,
+                    default=opt(CONF_ENABLE_IP_ADDRESS, False),
+                ): bool,
+                vol.Optional(
+                    CONF_ENABLE_MAC_ADDRESS,
+                    default=opt(CONF_ENABLE_MAC_ADDRESS, False),
+                ): bool,
+                vol.Optional(
+                    CONF_ENABLE_VALVE_POSITION,
+                    default=opt(CONF_ENABLE_VALVE_POSITION, False),
+                ): bool,
             }
         )
 

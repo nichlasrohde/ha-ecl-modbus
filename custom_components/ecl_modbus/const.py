@@ -24,3 +24,8 @@ CONF_ENABLE_S3 = "enable_s3"
 CONF_ENABLE_S4 = "enable_s4"
 CONF_ENABLE_S5 = "enable_s5"
 CONF_ENABLE_S6 = "enable_s6"
+
+# Options: enable/disable extra sensors
+CONF_ENABLE_IP_ADDRESS = "enable_ip_address"
+CONF_ENABLE_MAC_ADDRESS = "enable_mac_address"
+CONF_ENABLE_VALVE_POSITION = "enable_valve_position"
