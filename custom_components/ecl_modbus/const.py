@@ -15,6 +15,10 @@ DEFAULT_NAME = "ECL Modbus"
 DEFAULT_BAUDRATE = 38400
 DEFAULT_SLAVE_ID = 5
 
+# Poll interval (sekunder)
+CONF_SCAN_INTERVAL = "scan_interval"
+DEFAULT_SCAN_INTERVAL = 30
+
 # Options: enable/disable temperatur-sensorer
 CONF_ENABLE_S1 = "enable_s1"
 CONF_ENABLE_S2 = "enable_s2"
