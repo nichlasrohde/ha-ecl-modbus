@@ -1,0 +1,6 @@
+{
+  "name": "ECL Modbus",
+  "content_in_root": false,
+  "render_readme": true,
+  "domains": ["ecl_modbus"]
+}
