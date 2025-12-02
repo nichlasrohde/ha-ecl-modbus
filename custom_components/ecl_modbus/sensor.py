@@ -29,6 +29,8 @@ from .const import (
     DEFAULT_SLAVE_ID,
     CONF_BAUDRATE,
     CONF_SLAVE_ID,
+    CONF_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL,
     CONF_ENABLE_S1,
     CONF_ENABLE_S2,
     CONF_ENABLE_S3,
@@ -54,9 +56,6 @@ CONF_SLAVE_ID = "slave_id"
 DEFAULT_NAME = "ECL Modbus"
 DEFAULT_BAUDRATE = 38400
 DEFAULT_SLAVE_ID = 5
-
-# Poll-interval
-SCAN_INTERVAL = timedelta(seconds=30)
 
 # Temperatur-sensor registre (manual adresser)
 REG_S1_MANUAL = 4000
@@ -265,6 +264,7 @@ class EclModbusTemperatureSensor(SensorEntity):
         name: str,
         reg_address_manual: int,
         unique_suffix: str,
+        scan_interval_sec: int,
     ) -> None:
         self._hub = hub
         self._reg_address_manual = reg_address_manual
@@ -272,6 +272,17 @@ class EclModbusTemperatureSensor(SensorEntity):
         self._attr_unique_id = f"ecl_modbus_{unique_suffix}"
         self._attr_extra_state_attributes = {
             "ecl_modbus_register": reg_address_manual
+        }
+        self._attr_scan_interval = timedelta(seconds=scan_interval_sec)
+
+    @property
+    def device_info(self) -> dict:
+        """Returner device info så alle sensorer samles på én ECL-enhed."""
+        return {
+            "identifiers": {(DOMAIN, "ecl_modbus")},
+            "name": "ECL Modbus",
+            "manufacturer": "Danfoss",
+            "model": "ECL 120/220",
         }
 
     async def async_update(self) -> None:
@@ -321,6 +332,7 @@ class EclModbusOutputSensor(SensorEntity):
         unit: str | None = None,
         device_class: str | None = None,
         signed: bool = True,
+        scan_interval_sec: int = 30,
     ) -> None:
         self._hub = hub
         self._reg_address_manual = reg_address_manual
@@ -330,14 +342,29 @@ class EclModbusOutputSensor(SensorEntity):
 
         self._attr_name = name
         self._attr_unique_id = f"ecl_modbus_{unique_suffix}"
+
         self._attr_extra_state_attributes = {
             "ecl_modbus_register": reg_address_manual
         }
 
+        # Individuelt poll-interval fra options
+        self._attr_scan_interval = timedelta(seconds=scan_interval_sec)
+
         if unit is not None:
             self._attr_native_unit_of_measurement = unit
+
         if device_class is not None:
             self._attr_device_class = device_class
+
+    @property
+    def device_info(self) -> dict:
+        """Giv output-sensorerne samme device som temperatur-sensorerne."""
+        return {
+            "identifiers": {(DOMAIN, "ecl_modbus")},
+            "name": "ECL Modbus",
+            "manufacturer": "Danfoss",
+            "model": "ECL 120/220",
+        }
 
     async def async_update(self) -> None:
         """Hent ny outputværdi fra ECL via Modbus."""
@@ -368,12 +395,14 @@ class EclModbusOutputSensor(SensorEntity):
             return
 
         scaled = value * self._scale
+
         _LOGGER.debug(
             "ECL Modbus: opdaterer output %s (adr %s) til %s",
             self.name,
             self._reg_address_manual,
             scaled,
         )
+
         self._attr_native_value = scaled
 
 
@@ -404,7 +433,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Sæt sensorer op ud fra en config entry (UI-opsætning)."""
-    from homeassistant.const import CONF_NAME  # lokal import for at undgå cirkel
+    from homeassistant.const import CONF_NAME  # lokal import
 
     name = entry.data.get(CONF_NAME, DEFAULT_NAME)
     hub = get_hub_for_entry(hass, entry)
@@ -414,43 +443,45 @@ async def async_setup_entry(
     def opt(key: str, default: bool) -> bool:
         return bool(options.get(key, default))
 
+    scan_interval_sec = int(options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
+
     entities: list[SensorEntity] = []
 
     # ---------- Temperatur-sensorer S1-S6 ----------
     if opt(CONF_ENABLE_S1, False):
         entities.append(
             EclModbusTemperatureSensor(
-                hub, f"{name} S1 temperatur", REG_S1_MANUAL, "s1_temp"
+                hub, f"{name} S1 temperatur", REG_S1_MANUAL, "s1_temp", scan_interval_sec
             )
         )
     if opt(CONF_ENABLE_S2, False):
         entities.append(
             EclModbusTemperatureSensor(
-                hub, f"{name} S2 temperatur", REG_S2_MANUAL, "s2_temp"
+                hub, f"{name} S2 temperatur", REG_S2_MANUAL, "s2_temp", scan_interval_sec
             )
         )
     if opt(CONF_ENABLE_S3, True):
         entities.append(
             EclModbusTemperatureSensor(
-                hub, f"{name} S3 temperatur", REG_S3_MANUAL, "s3_temp"
+                hub, f"{name} S3 temperatur", REG_S3_MANUAL, "s3_temp", scan_interval_sec
             )
         )
     if opt(CONF_ENABLE_S4, True):
         entities.append(
             EclModbusTemperatureSensor(
-                hub, f"{name} S4 temperatur", REG_S4_MANUAL, "s4_temp"
+                hub, f"{name} S4 temperatur", REG_S4_MANUAL, "s4_temp", scan_interval_sec
             )
         )
     if opt(CONF_ENABLE_S5, False):
         entities.append(
             EclModbusTemperatureSensor(
-                hub, f"{name} S5 temperatur", REG_S5_MANUAL, "s5_temp"
+                hub, f"{name} S5 temperatur", REG_S5_MANUAL, "s5_temp", scan_interval_sec
             )
         )
     if opt(CONF_ENABLE_S6, False):
         entities.append(
             EclModbusTemperatureSensor(
-                hub, f"{name} S6 temperatur", REG_S6_MANUAL, "s6_temp"
+                hub, f"{name} S6 temperatur", REG_S6_MANUAL, "s6_temp", scan_interval_sec
             )
         )
 
@@ -463,8 +494,9 @@ async def async_setup_entry(
                 reg_address_manual=REG_TR1_OVERRIDE,
                 unique_suffix="tr1_override",
                 value_type="int16",
-                scale=0.1,  # -150.0 .. 150.0 %
+                scale=0.1,
                 unit=PERCENTAGE,
+                scan_interval_sec=scan_interval_sec,
             )
         )
 
@@ -478,6 +510,7 @@ async def async_setup_entry(
                 value_type="int16",
                 scale=0.1,
                 unit=PERCENTAGE,
+                scan_interval_sec=scan_interval_sec,
             )
         )
 
@@ -490,6 +523,7 @@ async def async_setup_entry(
                 unique_suffix="r1_override",
                 value_type="int16",
                 scale=1.0,
+                scan_interval_sec=scan_interval_sec,
             )
         )
 
@@ -502,6 +536,7 @@ async def async_setup_entry(
                 unique_suffix="r2_override",
                 value_type="int16",
                 scale=1.0,
+                scan_interval_sec=scan_interval_sec,
             )
         )
 
@@ -515,6 +550,7 @@ async def async_setup_entry(
                 value_type="float",
                 scale=1.0,
                 unit=PERCENTAGE,
+                scan_interval_sec=scan_interval_sec,
             )
         )
 
@@ -528,6 +564,7 @@ async def async_setup_entry(
                 value_type="float",
                 scale=1.0,
                 unit=UnitOfFrequency.HERTZ,
+                scan_interval_sec=scan_interval_sec,
             )
         )
 
@@ -541,6 +578,7 @@ async def async_setup_entry(
                 value_type="float",
                 scale=1.0,
                 unit=PERCENTAGE,
+                scan_interval_sec=scan_interval_sec,
             )
         )
 
@@ -554,6 +592,7 @@ async def async_setup_entry(
                 value_type="float",
                 scale=1.0,
                 unit=PERCENTAGE,
+                scan_interval_sec=scan_interval_sec,
             )
         )
 
