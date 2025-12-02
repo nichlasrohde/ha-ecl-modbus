@@ -443,7 +443,19 @@ async def async_setup_entry(
     def opt(key: str, default: bool) -> bool:
         return bool(options.get(key, default))
 
-    scan_interval_sec = int(options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
+    # Læs scan_interval robust fra options
+    try:
+        scan_interval_sec = int(
+            options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+        )
+    except (TypeError, ValueError):
+        scan_interval_sec = DEFAULT_SCAN_INTERVAL
+
+    # Clamp til fornuftigt interval (5–3600 sek)
+    if scan_interval_sec < 5:
+        scan_interval_sec = 5
+    elif scan_interval_sec > 3600:
+        scan_interval_sec = 3600
 
     entities: list[SensorEntity] = []
 
