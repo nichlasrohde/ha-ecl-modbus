@@ -10,7 +10,7 @@ No runtime logic.
 DOMAIN = "ecl_modbus"
 
 # Platforms we expose
-PLATFORMS: list[str] = ["sensor", "number"]
+PLATFORMS: list[str] = ["sensor", "number", "select"]
 
 # Config entry (setup)
 CONF_BAUDRATE = "baudrate"

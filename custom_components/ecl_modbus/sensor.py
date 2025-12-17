@@ -44,26 +44,48 @@ class EclModbusRegisterSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self) -> Any:
-        if not self.coordinator.data:
+        data = self.coordinator.data
+        if not data:
             return None
 
-        raw = self.coordinator.data.get(self._reg.key)
+        raw = data.get(self._reg.key)
         if raw is None:
             return None
 
+        # Strings
         if self._reg.reg_type in (RegisterType.STRING16, RegisterType.STRING32):
             return raw
 
+        # Enum/token mapping (status/tilstande)
+        enum_map = getattr(self._reg, "enum", None)
+        if enum_map and isinstance(raw, (int, float)):
+            return enum_map.get(int(raw), str(int(raw)))
+
+        # Numeric types
         try:
-            value = float(raw) * float(self._reg.scale)
+            value = float(raw) * float(getattr(self._reg, "scale", 1.0) or 1.0)
         except (TypeError, ValueError):
             return None
 
+        # Pretty rounding
         if self._reg.device_class == "temperature":
             return round(value, 1)
         if self._reg.unit == "%":
             return round(value, 1)
-        return value
+
+        # Avoid ugly float representation (e.g. 30.100000381...)
+        step = getattr(self._reg, "step", None)
+        if step:
+            try:
+                step_f = float(step)
+                if step_f > 0:
+                    decimals = max(0, len(str(step_f).split(".")[1]) if "." in str(step_f) else 0)
+                    return round(value, decimals)
+            except Exception:
+                pass
+
+        # Default numeric output
+        return round(value, 6)
 
 
 async def async_setup_entry(

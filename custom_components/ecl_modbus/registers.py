@@ -192,6 +192,33 @@ REG_EXTRAS: Final[list[RegisterDef]] = [
         max_value=150,
         step=0.1,
     ),
+    RegisterDef(
+        key="operation_mode",
+        name="Operation mode",
+        address=21000,
+        reg_type=RegisterType.INT16,
+        signed=False,
+        writable=True,
+        value_map={
+            0: "Automatic",
+            1: "Comfort",
+            2: "Saving",
+            3: "Frost protection",
+        },
+    ),
+    RegisterDef(
+        key="operation_status",
+        name="Operation status",
+        address=21001,
+        reg_type=RegisterType.INT16,
+        signed=False,
+        writable=False,
+        value_map={
+            0: "Comfort",
+            1: "Saving",
+            2: "Frost protection",
+        },
+    ),
 ]
 
 # -----------------------------------------------------------------------------
