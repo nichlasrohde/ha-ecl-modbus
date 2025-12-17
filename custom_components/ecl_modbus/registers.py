@@ -157,6 +157,16 @@ REG_EXTRAS: Final[list[RegisterDef]] = [
         device_class="temperature",
         state_class="measurement",
     ),
+    RegisterDef(
+        key="heat_return_temperature_reference",
+        name="Heat return temperature reference",
+        address=21210,
+        reg_type=RegisterType.FLOAT,
+        unit="°C",
+        device_class="temperature",
+        state_class="measurement",
+        icon="mdi:thermometer-water",
+    ),
 ]
 
 # -----------------------------------------------------------------------------
