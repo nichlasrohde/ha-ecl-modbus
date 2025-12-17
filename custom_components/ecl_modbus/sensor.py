@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from homeassistant.components.sensor import SensorEntity
@@ -15,23 +16,42 @@ from .registers import RegisterDef, RegisterType
 _LOGGER = logging.getLogger(__name__)
 
 
+def _decimals_from_step(step: float | None) -> int | None:
+    """Return number of decimals implied by step (e.g. 0.1 -> 1, 0.01 -> 2)."""
+    if step is None:
+        return None
+    try:
+        d = Decimal(str(step)).normalize()
+    except (InvalidOperation, ValueError):
+        return None
+    exp = d.as_tuple().exponent
+    return abs(exp) if exp < 0 else 0
+
+
 class EclModbusRegisterSensor(CoordinatorEntity, SensorEntity):
     """Generic sensor exposing one read-only register."""
 
     def __init__(self, coordinator, entry_title: str, reg: RegisterDef) -> None:
         super().__init__(coordinator)
         self._reg = reg
+
         self._attr_name = f"{entry_title} {reg.name}"
         self._attr_unique_id = f"{DOMAIN}_{reg.key}"
+
         self._attr_native_unit_of_measurement = reg.unit
         self._attr_device_class = reg.device_class
         self._attr_state_class = reg.state_class
         self._attr_icon = reg.icon
+
         self._attr_extra_state_attributes = {
             "ecl_modbus_register": reg.address,
             "ecl_modbus_type": reg.reg_type.value,
             "ecl_modbus_writable": getattr(reg, "writable", False),
         }
+
+        # If we show mapped text, don't let HA treat it as a measurement/statistics sensor
+        if getattr(reg, "value_map", None):
+            self._attr_state_class = None
 
     @property
     def device_info(self) -> dict:
@@ -56,10 +76,14 @@ class EclModbusRegisterSensor(CoordinatorEntity, SensorEntity):
         if self._reg.reg_type in (RegisterType.STRING16, RegisterType.STRING32):
             return raw
 
-        # Enum/token mapping (status/tilstande)
-        enum_map = getattr(self._reg, "enum", None)
-        if enum_map and isinstance(raw, (int, float)):
-            return enum_map.get(int(raw), str(int(raw)))
+        # Enum/token mapping (show text instead of number)
+        value_map = getattr(self._reg, "value_map", None)
+        if value_map:
+            try:
+                code = int(float(raw))
+            except (TypeError, ValueError):
+                return None
+            return value_map.get(code, str(code))
 
         # Numeric types
         try:
@@ -67,24 +91,17 @@ class EclModbusRegisterSensor(CoordinatorEntity, SensorEntity):
         except (TypeError, ValueError):
             return None
 
-        # Pretty rounding
+        # Pretty rounding for common types
         if self._reg.device_class == "temperature":
             return round(value, 1)
         if self._reg.unit == "%":
             return round(value, 1)
 
         # Avoid ugly float representation (e.g. 30.100000381...)
-        step = getattr(self._reg, "step", None)
-        if step:
-            try:
-                step_f = float(step)
-                if step_f > 0:
-                    decimals = max(0, len(str(step_f).split(".")[1]) if "." in str(step_f) else 0)
-                    return round(value, decimals)
-            except Exception:
-                pass
+        decimals = _decimals_from_step(getattr(self._reg, "step", None))
+        if decimals is not None:
+            return round(value, decimals)
 
-        # Default numeric output
         return round(value, 6)
 
 
