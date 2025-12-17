@@ -190,7 +190,7 @@ REG_EXTRAS: Final[list[RegisterDef]] = [
         writable=True,
         min_value=5,
         max_value=150,
-        step=0.5,
+        step=0.1,
     ),
 ]
 
