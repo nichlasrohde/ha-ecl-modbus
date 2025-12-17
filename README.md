@@ -7,22 +7,22 @@ It is tested on **ECL 120**, but **ECL 220 uses the same register map**, so it *
 ## 🔧 Features
 Current supported features:
 
-### Temperature Sensors
-| Sensor | Register | Description |
-|--------|----------|-------------|
-| **S1 Temperature** | 4000 | Current value of temperature sensor S1 |
-| **S2 Temperature** | 4010 | Current value of temperature sensor S2 |
-| **S3 Temperature** | 4020 | Current value of temperature sensor S3 |
-| **S4 Temperature** | 4030 | Current value of temperature sensor S4 |
-| **S5 Temperature** | 4040 | Current value of temperature sensor S5 |
-| **S6 Temperature** | 4050 | Current value of temperature sensor S6 |
-
-### Additional Calculated Values
-| Name | Register | Type | Description |
-|------|----------|-------|-------------|
-| **Valve Position** | 21700 | Float (%) | Actual valve opening position |
-| **Heat Flow Temperature Reference** | 21200 | Float (°C) | Calculated heat flow reference |
-| **Heat Return Temperature Reference** | 21210 | Float (°C) | Reference for Return Limiter |
+| **Addr** | **RW** | **Name**                               | **Type** | **Unit** | **Min** | **Max** | **Description**                                                                   |
+|----------|--------|----------------------------------------|----------|----------|---------|---------|-----------------------------------------------------------------------------------|
+| 4000     |    R   | **Value of Temperature Sensor S1**     | Float    | °C       | -64     | 192     | Current value of temperature sensor S1                                            |
+| 4010     |    R   | **Value of Temperature Sensor S2**     | Float    | °C       | -64     | 192     | Current value of temperature sensor S2                                            |
+| 4020     |    R   | **Value of Temperature Sensor S3**     | Float    | °C       | -64     | 192     | Current value of temperature sensor S3                                            |
+| 4030     |    R   | **Value of Temperature Sensor S4**     | Float    | °C       | -64     | 192     | Current value of temperature sensor S4                                            |
+| 4040     |    R   | **Value of Temperature Sensor S5**     | Float    | °C       | -64     | 192     | Current value of temperature sensor S5                                            |
+| 4050     |    R   | **Value of Temperature Sensor S6**     | Float    | °C       | -64     | 192     | Current value of temperature sensor S6                                            |
+| 2100     |    R   | **Ethernet IP Address**                | String16 |          |         |         | Ethernet IP Address                                                               |
+| 2110     |    R   | **Ethernet MAC Address**               | String32 |          |         |         | Ethernet MAC Address                                                              |
+| 21000    |   RW   | **Operation Mode**                     | UInt16   |          | 0       | 10      | Current operation mode: 0 = Automatic 1 = Comfort 2 = Saving 3 = Frost protection |
+| 21001    |    R   | **Operation Status**                   | UInt16   |          | 0       | 10      | Current operation status: 0 = Comfort 1 = Saving 2 = Frost Protection             |
+| 21200    |    R   | **Heat Flow Temperature Reference**    | Float    | °C       | 0       | 150     | Calculated heat flow reference                                                    |
+| 21206    |    R   | **Heat Weather Compensated Reference** | Float    | °C       | -150    | 150     | Calculated value from the weather compensator                                     |
+| 21210    |   RW   | **Heat Return Temperature Reference**  | Float    | °C       | 5       | 150     | Reference for Return Limiter                                                      |
+| 21700    |    R   | **Heat Valve Position**                | Float    | %        | 0       | 1       | Scale 100 – Estimated position of motor                                           |
 
 ### Fully configurable
 - Enable/disable each sensor individually  

@@ -1,35 +1,23 @@
 from __future__ import annotations
 
-"""Constants for the ECL Modbus integration."""
+"""
+Constants for the ECL Modbus integration.
 
-# Domain used by Home Assistant
+Keep ONLY constants and config keys here.
+No runtime logic.
+"""
+
 DOMAIN = "ecl_modbus"
 
-# This integration exposes only the sensor platform
-PLATFORMS: list[str] = ["sensor"]
+# Platforms we expose
+PLATFORMS: list[str] = ["sensor", "number", "select"]
 
-# Configuration keys (for config flow)
+# Config entry (setup)
 CONF_BAUDRATE = "baudrate"
 CONF_SLAVE_ID = "slave_id"
+CONF_SCAN_INTERVAL = "scan_interval"
 
-# Default values
 DEFAULT_NAME = "ECL Modbus"
 DEFAULT_BAUDRATE = 38400
 DEFAULT_SLAVE_ID = 5
-
-# Options: enable/disable temperature sensors S1–S6
-CONF_ENABLE_S1 = "enable_s1"
-CONF_ENABLE_S2 = "enable_s2"
-CONF_ENABLE_S3 = "enable_s3"
-CONF_ENABLE_S4 = "enable_s4"
-CONF_ENABLE_S5 = "enable_s5"
-CONF_ENABLE_S6 = "enable_s6"
-
-# Options: enable/disable extra sensors
-CONF_ENABLE_IP_ADDRESS = "enable_ip_address"
-CONF_ENABLE_MAC_ADDRESS = "enable_mac_address"
-CONF_ENABLE_VALVE_POSITION = "enable_valve_position"
-
-# Extra temperature reference sensors
-CONF_ENABLE_HEAT_FLOW_REF = "enable_heat_flow_ref"
-CONF_ENABLE_HEAT_RETURN_REF = "enable_heat_return_ref"
+DEFAULT_SCAN_INTERVAL = 30

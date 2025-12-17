@@ -1,34 +1,32 @@
 from __future__ import annotations
 
-"""Config flow and options flow for the ECL Modbus integration."""
+"""Config flow (UI setup) and options flow for the ECL Modbus integration.
+
+Register-driven design:
+- All register metadata lives in registers.py
+- Options are generated dynamically from ALL_REGISTERS
+- Platforms (sensor/number/select) read the same options keys via option_key()
+"""
 
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, CONF_PORT
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.config_entries import ConfigEntry
 
 from .const import (
     DOMAIN,
-    DEFAULT_NAME,
     DEFAULT_BAUDRATE,
+    DEFAULT_NAME,
+    DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
     CONF_BAUDRATE,
+    CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
-    CONF_ENABLE_S1,
-    CONF_ENABLE_S2,
-    CONF_ENABLE_S3,
-    CONF_ENABLE_S4,
-    CONF_ENABLE_S5,
-    CONF_ENABLE_S6,
-    CONF_ENABLE_IP_ADDRESS,
-    CONF_ENABLE_MAC_ADDRESS,
-    CONF_ENABLE_VALVE_POSITION,
-    CONF_ENABLE_HEAT_FLOW_REF,
-    CONF_ENABLE_HEAT_RETURN_REF,
 )
+from .registers import ALL_REGISTERS, option_key
 
 
 class EclModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -39,7 +37,7 @@ class EclModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
         """First step when a user adds the integration."""
         if user_input is not None:
-            # Only one ECL instance makes sense → fixed unique_id
+            # One controller instance per HA is the common use case
             await self.async_set_unique_id(DOMAIN)
             self._abort_if_unique_id_configured()
 
@@ -51,7 +49,7 @@ class EclModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = vol.Schema(
             {
                 vol.Optional(CONF_NAME, default=DEFAULT_NAME): str,
-                vol.Required(CONF_PORT): str,  # e.g. /dev/ttyUSB0 or /dev/ttyUSB1
+                vol.Required(CONF_PORT): str,  # e.g. /dev/ttyUSB0
                 vol.Optional(CONF_BAUDRATE, default=DEFAULT_BAUDRATE): int,
                 vol.Optional(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): int,
             }
@@ -67,7 +65,12 @@ class EclModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class EclModbusOptionsFlow(config_entries.OptionsFlow):
-    """Handle options (which sensors are enabled) for an existing entry."""
+    """Options flow for an existing entry.
+
+    Options:
+    - Enable/disable registers (checkbox per register)
+    - Global polling interval (scan_interval)
+    """
 
     def __init__(self, config_entry: ConfigEntry) -> None:
         self._entry = config_entry
@@ -77,49 +80,35 @@ class EclModbusOptionsFlow(config_entries.OptionsFlow):
         return await self.async_step_options(user_input)
 
     async def async_step_options(self, user_input: dict | None = None) -> FlowResult:
-        """Show the form where the user chooses which sensors to enable."""
+        """Show the form where the user chooses which registers to enable."""
+        options = dict(self._entry.options)
+
         if user_input is not None:
-            # Save options as entry.options
-            return self.async_create_entry(title="", data=user_input)
+            # IMPORTANT: merge with existing options to avoid losing keys
+            new_options = {**options, **user_input}
+            return self.async_create_entry(title="", data=new_options)
 
-        options = self._entry.options
+        # Default enable behaviour (conservative)
+        default_enabled_keys = {"s3_temperature", "s4_temperature"}
 
-        def opt(key: str, default: bool) -> bool:
-            """Helper to read a boolean option with a default."""
-            return bool(options.get(key, default))
+        schema_dict: dict[vol.Marker, object] = {}
 
-        # Defaults: S3 & S4 on, others off; extra sensors off by default
-        data_schema = vol.Schema(
-            {
-                # Temperature sensors S1–S6
-                vol.Optional(CONF_ENABLE_S1, default=opt(CONF_ENABLE_S1, False)): bool,
-                vol.Optional(CONF_ENABLE_S2, default=opt(CONF_ENABLE_S2, False)): bool,
-                vol.Optional(CONF_ENABLE_S3, default=opt(CONF_ENABLE_S3, True)): bool,
-                vol.Optional(CONF_ENABLE_S4, default=opt(CONF_ENABLE_S4, True)): bool,
-                vol.Optional(CONF_ENABLE_S5, default=opt(CONF_ENABLE_S5, False)): bool,
-                vol.Optional(CONF_ENABLE_S6, default=opt(CONF_ENABLE_S6, False)): bool,
-                # Extra sensors: IP, MAC, valve position
-                vol.Optional(
-                    CONF_ENABLE_IP_ADDRESS,
-                    default=opt(CONF_ENABLE_IP_ADDRESS, False),
-                ): bool,
-                vol.Optional(
-                    CONF_ENABLE_MAC_ADDRESS,
-                    default=opt(CONF_ENABLE_MAC_ADDRESS, False),
-                ): bool,
-                vol.Optional(
-                    CONF_ENABLE_VALVE_POSITION,
-                    default=opt(CONF_ENABLE_VALVE_POSITION, False),
-                ): bool,
-                vol.Optional(
-                    CONF_ENABLE_HEAT_FLOW_REF,
-                    default=opt(CONF_ENABLE_HEAT_FLOW_REF, False),
-                ): bool,
-                vol.Optional(
-                    CONF_ENABLE_HEAT_RETURN_REF,
-                    default=opt(CONF_ENABLE_HEAT_RETURN_REF, False),
-                ): bool,
-            }
+        # One checkbox per register (both RO + RW are enabled here;
+        # platforms decide how to expose them: sensors vs numbers/selects)
+        for reg in ALL_REGISTERS:
+            k = option_key(reg.key)
+            default_value = bool(options.get(k, reg.key in default_enabled_keys))
+            schema_dict[vol.Optional(k, default=default_value)] = bool
+
+        # Global polling interval (seconds)
+        schema_dict[
+            vol.Optional(
+                CONF_SCAN_INTERVAL,
+                default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+            )
+        ] = vol.All(int, vol.Clamp(min=5, max=3600))
+
+        return self.async_show_form(
+            step_id="options",
+            data_schema=vol.Schema(schema_dict),
         )
-
-        return self.async_show_form(step_id="options", data_schema=data_schema)
