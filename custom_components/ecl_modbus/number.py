@@ -203,6 +203,7 @@ async def async_setup_entry(
         r for r in regs
         if getattr(r, "writable", False)
         and r.reg_type in (RegisterType.FLOAT, RegisterType.INT16)
+        and not getattr(r, "value_map", None)  # <-- VIGTIG
     ]
 
     async_add_entities(
