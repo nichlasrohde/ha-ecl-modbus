@@ -18,7 +18,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up ECL Modbus from a config entry created via the UI."""
     hass.data.setdefault(DOMAIN, {})
 
-    # Forward the config entry to the sensor platform
+    # Forward the config entry to all platforms (sensor, number, etc.)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Reload integration automatically when the entry is updated (options changed)
@@ -30,15 +30,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry and close the Modbus client."""
     # Close the Modbus hub (if any) to free the serial port
-    hub = hass.data.get(DOMAIN, {}).get(entry.entry_id)
-    if hub is not None:
-        try:
-            hub.close()
-        except Exception:  # noqa: BLE001
-            # Do not let errors in close() break unloading
-            pass
+    entry_store = hass.data.get(DOMAIN, {}).get(entry.entry_id)
 
-    # Unload all platforms (sensors)
+    if isinstance(entry_store, dict):
+        hub = entry_store.get("hub")
+        if hub is not None:
+            try:
+                hub.close()
+            except Exception:  # noqa: BLE001
+                pass
+
+    # Unload all platforms
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok and DOMAIN in hass.data:

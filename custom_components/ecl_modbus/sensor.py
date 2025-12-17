@@ -2,13 +2,13 @@ from __future__ import annotations
 
 """Sensor platform for the ECL Modbus integration.
 
-This module is intentionally built around a single register definition list
-(`registers.py`). That makes it easy to add new registers without copy/paste
-of entity classes and setup logic.
+Built around one register definition list (registers.py).
 
-The integration uses a DataUpdateCoordinator to poll all enabled registers at
-one global interval. This avoids serial port locking issues and improves RS485
-stability compared to per-entity polling.
+Important design choices:
+- One DataUpdateCoordinator polls ALL enabled registers at a single global interval.
+  This improves RS485 stability and prevents serial port locking issues.
+- Read/write (RW) registers are NOT exposed as sensors. They will be exposed as
+  Number/Select entities in separate platforms (number.py / select.py).
 """
 
 import logging
@@ -259,7 +259,7 @@ class EclModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 # -----------------------------------------------------------------------------
 
 class EclModbusRegisterSensor(CoordinatorEntity[EclModbusCoordinator], SensorEntity):
-    """Generic sensor that exposes one register from the coordinator."""
+    """Generic sensor that exposes one read-only register from the coordinator."""
 
     def __init__(
         self,
@@ -284,6 +284,7 @@ class EclModbusRegisterSensor(CoordinatorEntity[EclModbusCoordinator], SensorEnt
         self._attr_extra_state_attributes = {
             "ecl_modbus_register": reg.address,
             "ecl_modbus_type": reg.reg_type.value,
+            "ecl_modbus_writable": reg.writable,
         }
 
     @property
@@ -303,25 +304,33 @@ class EclModbusRegisterSensor(CoordinatorEntity[EclModbusCoordinator], SensorEnt
         if raw is None:
             return None
 
-        # Apply scaling for numeric types (if configured)
-        if self._reg.reg_type in (RegisterType.FLOAT, RegisterType.INT16):
+        # Strings etc.
+        if self._reg.reg_type in (RegisterType.STRING16, RegisterType.STRING32):
+            return raw
+
+        # Numeric output
+        if self._reg.reg_type == RegisterType.INT16:
+            # Prefer int output if no scaling is needed
+            if self._reg.scale == 1.0 and isinstance(raw, int):
+                return raw
+            try:
+                value = float(raw) * float(self._reg.scale)
+            except (TypeError, ValueError):
+                return None
+        else:
+            # FLOAT
             try:
                 value = float(raw) * float(self._reg.scale)
             except (TypeError, ValueError):
                 return None
 
-            # Common nicety: round temperatures and percentages a bit
-            if self._reg.device_class == "temperature":
-                return round(value, 1)
-            if self._reg.unit == "%":
-                return round(value, 1)
+        # Small niceties for common types
+        if self._reg.device_class == "temperature":
+            return round(value, 1)
+        if self._reg.unit == "%":
+            return round(value, 1)
 
-            # Default numeric output
-            # If integer scaling isn't used, keep int-ish values readable
-            return value
-
-        # Strings, etc.
-        return raw
+        return value
 
 
 # -----------------------------------------------------------------------------
@@ -343,25 +352,35 @@ def _clamp_scan_interval(value: Any) -> int:
 
 def _default_enabled(reg: RegisterDef) -> bool:
     """Return whether a register should be enabled by default."""
-    # Keep defaults conservative. Most users typically want S3/S4 first.
     if reg.key in ("s3_temperature", "s4_temperature"):
         return True
     return False
 
 
+def _entry_store(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
+    """Ensure a dict store for this entry in hass.data."""
+    domain_data = hass.data.setdefault(DOMAIN, {})
+    store = domain_data.get(entry.entry_id)
+    if not isinstance(store, dict):
+        store = {}
+        domain_data[entry.entry_id] = store
+    return store
+
+
 def get_hub_for_entry(hass: HomeAssistant, entry: ConfigEntry) -> EclModbusHub:
     """Get (or create) the EclModbusHub for this config entry."""
-    data = hass.data.setdefault(DOMAIN, {})
-    hub: EclModbusHub | None = data.get(entry.entry_id)
+    store = _entry_store(hass, entry)
+    hub = store.get("hub")
 
-    if hub is None:
-        port = entry.data[CONF_PORT]
-        baudrate = entry.data.get(CONF_BAUDRATE, DEFAULT_BAUDRATE)
-        slave_id = entry.data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)
+    if isinstance(hub, EclModbusHub):
+        return hub
 
-        hub = EclModbusHub(port=port, baudrate=baudrate, slave_id=slave_id)
-        data[entry.entry_id] = hub
+    port = entry.data[CONF_PORT]
+    baudrate = entry.data.get(CONF_BAUDRATE, DEFAULT_BAUDRATE)
+    slave_id = entry.data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)
 
+    hub = EclModbusHub(port=port, baudrate=baudrate, slave_id=slave_id)
+    store["hub"] = hub
     return hub
 
 
@@ -377,7 +396,7 @@ async def async_setup_entry(
     # Global polling interval (one coordinator for everything)
     scan_interval_sec = _clamp_scan_interval(entry.options.get(CONF_SCAN_INTERVAL))
 
-    # Build enabled register list from options
+    # Build enabled register list from options (includes RW so coordinator can serve number.py later)
     enabled_regs: list[RegisterDef] = []
     for reg in ALL_REGISTERS:
         enabled = bool(entry.options.get(option_key(reg.key), _default_enabled(reg)))
@@ -391,11 +410,18 @@ async def async_setup_entry(
         scan_interval_sec=scan_interval_sec,
     )
 
-    # Do a first refresh before adding entities (better UX)
+    # Save coordinator for other platforms (number/select) to reuse
+    store = _entry_store(hass, entry)
+    store["coordinator"] = coordinator
+    store["registers"] = enabled_regs
+
+    # First refresh before adding entities (better UX)
     await coordinator.async_config_entry_first_refresh()
 
+    # Create ONLY read-only sensors here (RW registers will be handled elsewhere)
+    ro_regs = [r for r in enabled_regs if not getattr(r, "writable", False)]
     entities: list[SensorEntity] = [
-        EclModbusRegisterSensor(coordinator, entry_title, reg) for reg in enabled_regs
+        EclModbusRegisterSensor(coordinator, entry_title, reg) for reg in ro_regs
     ]
 
     async_add_entities(entities, update_before_add=False)

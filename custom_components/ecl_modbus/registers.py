@@ -4,43 +4,64 @@ from __future__ import annotations
 
 Goal:
 - Keep ALL register metadata in one place (address, type, unit, scaling, etc.)
-- Make it easy to add new registers by adding a single entry to a list.
+- Make it easy to add new registers by adding a single entry to a list
+- Support both read-only (R) and read/write (RW) registers
 
 Notes:
-- ECL Modbus "manual addresses" in Danfoss docs are typically 1-based (PNU-style).
-- pymodbus read_holding_registers() uses 0-based addressing, so you usually read (address - 1).
+- ECL Modbus "manual addresses" in Danfoss documentation are typically 1-based
+  (PNU-style addresses).
+- pymodbus read_holding_registers() uses 0-based addressing, so the integration
+  will internally read (address - 1).
 """
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Final
+from typing import Final, Mapping
 
 
 class RegisterType(str, Enum):
     """How a register value should be decoded."""
     FLOAT = "float"          # 2 x 16-bit registers -> IEEE754 float (big-endian)
     INT16 = "int16"          # 1 x 16-bit register -> signed/unsigned int
-    STRING16 = "string16"    # 16 chars (typically 8 registers) - adjust decoder later
-    STRING32 = "string32"    # 32 chars (typically 16 registers) - adjust decoder later
+    STRING16 = "string16"    # 16 chars (typically 8 registers)
+    STRING32 = "string32"    # 32 chars (typically 16 registers)
 
 
 @dataclass(frozen=True, slots=True)
 class RegisterDef:
-    """Definition of one readable register/point."""
-    key: str                 # Stable internal key (also good for unique_id suffix)
-    name: str                # Human friendly name shown in Home Assistant
-    address: int             # Manual register address from Danfoss documentation
-    reg_type: RegisterType
+    """Definition of one Modbus register/point.
 
-    # Optional presentation metadata
+    A register can be read-only (R) or read/write (RW).
+    RW registers can later be exposed as Number or Select entities in Home Assistant.
+    """
+
+    # Identity
+    key: str                 # Stable internal key (also used for unique_id suffix)
+    name: str                # Human-friendly name shown in Home Assistant
+    address: int             # Manual register address from Danfoss documentation
+    reg_type: RegisterType   # How the value is decoded
+
+    # Presentation metadata (Home Assistant)
     unit: str | None = None
     device_class: str | None = None
     state_class: str | None = "measurement"
     icon: str | None = None
 
-    # Optional value handling
-    scale: float = 1.0       # Apply after decoding (e.g., int16 * 0.1)
+    # Value handling
+    scale: float = 1.0       # Apply after decoding (e.g. int16 * 0.1)
     signed: bool = True      # Only relevant for INT16
+
+    # Write support
+    writable: bool = False   # True if the register supports writing (RW)
+
+    # Optional limits for writable numeric registers
+    min_value: float | None = None
+    max_value: float | None = None
+    step: float | None = None
+
+    # Optional mapping for mode/token registers
+    # Example: {1: "Comfort", 2: "Night", 3: "Frost"}
+    value_map: Mapping[int, str] | None = None
 
 
 # -----------------------------------------------------------------------------
@@ -166,6 +187,10 @@ REG_EXTRAS: Final[list[RegisterDef]] = [
         device_class="temperature",
         state_class="measurement",
         icon="mdi:thermometer-water",
+        writable=True,
+        min_value=5,
+        max_value=150,
+        step=0.5,
     ),
 ]
 

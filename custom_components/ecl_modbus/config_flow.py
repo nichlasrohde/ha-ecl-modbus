@@ -2,10 +2,10 @@ from __future__ import annotations
 
 """Config flow (UI setup) and options flow for the ECL Modbus integration.
 
-This implementation is register-driven:
-- The list of available registers lives in `registers.py`
-- Options are generated dynamically from that list
-- Sensor platform reads the same options keys (enable_<register_key>)
+Register-driven design:
+- All register metadata lives in registers.py
+- Options are generated dynamically from ALL_REGISTERS
+- Platforms (sensor/number/select) read the same options keys via option_key()
 """
 
 import voluptuous as vol
@@ -37,7 +37,7 @@ class EclModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
         """First step when a user adds the integration."""
         if user_input is not None:
-            # Only one ECL instance makes sense → fixed unique_id
+            # One controller instance per HA is the common use case
             await self.async_set_unique_id(DOMAIN)
             self._abort_if_unique_id_configured()
 
@@ -49,7 +49,7 @@ class EclModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         data_schema = vol.Schema(
             {
                 vol.Optional(CONF_NAME, default=DEFAULT_NAME): str,
-                vol.Required(CONF_PORT): str,  # e.g. /dev/ttyUSB0 or /dev/ttyUSB1
+                vol.Required(CONF_PORT): str,  # e.g. /dev/ttyUSB0
                 vol.Optional(CONF_BAUDRATE, default=DEFAULT_BAUDRATE): int,
                 vol.Optional(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): int,
             }
@@ -65,11 +65,11 @@ class EclModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class EclModbusOptionsFlow(config_entries.OptionsFlow):
-    """Handle options for an existing entry.
+    """Options flow for an existing entry.
 
-    Options include:
-    - Which registers should be enabled (checkbox per register)
-    - Global poll interval (scan_interval)
+    Options:
+    - Enable/disable registers (checkbox per register)
+    - Global polling interval (scan_interval)
     """
 
     def __init__(self, config_entry: ConfigEntry) -> None:
@@ -80,28 +80,24 @@ class EclModbusOptionsFlow(config_entries.OptionsFlow):
         return await self.async_step_options(user_input)
 
     async def async_step_options(self, user_input: dict | None = None) -> FlowResult:
-        """Show the form where the user chooses which sensors to enable."""
+        """Show the form where the user chooses which registers to enable."""
+        options = dict(self._entry.options)
+
         if user_input is not None:
-            # Save options as entry.options
-            return self.async_create_entry(title="", data=user_input)
+            # IMPORTANT: merge with existing options to avoid losing keys
+            new_options = {**options, **user_input}
+            return self.async_create_entry(title="", data=new_options)
 
-        options = self._entry.options
-
-        def opt_bool(key: str, default: bool) -> bool:
-            """Helper to read a boolean option with a default."""
-            return bool(options.get(key, default))
-
-        # Default enable behaviour:
-        # - Keep defaults conservative
-        # - S3/S4 are commonly used, so enable them by default (if no options exist)
+        # Default enable behaviour (conservative)
         default_enabled_keys = {"s3_temperature", "s4_temperature"}
 
         schema_dict: dict[vol.Marker, object] = {}
 
-        # One checkbox per register
+        # One checkbox per register (both RO + RW are enabled here;
+        # platforms decide how to expose them: sensors vs numbers/selects)
         for reg in ALL_REGISTERS:
             k = option_key(reg.key)
-            default_value = opt_bool(k, reg.key in default_enabled_keys)
+            default_value = bool(options.get(k, reg.key in default_enabled_keys))
             schema_dict[vol.Optional(k, default=default_value)] = bool
 
         # Global polling interval (seconds)
@@ -112,4 +108,7 @@ class EclModbusOptionsFlow(config_entries.OptionsFlow):
             )
         ] = vol.All(int, vol.Clamp(min=5, max=3600))
 
-        return self.async_show_form(step_id="options", data_schema=vol.Schema(schema_dict))
+        return self.async_show_form(
+            step_id="options",
+            data_schema=vol.Schema(schema_dict),
+        )
