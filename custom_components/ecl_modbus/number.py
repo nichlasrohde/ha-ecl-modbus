@@ -108,7 +108,20 @@ class EclModbusRegisterNumber(CoordinatorEntity, NumberEntity):
             return None
 
         scale = float(getattr(self._reg, "scale", 1.0) or 1.0)
-        return val * scale
+        value = val * scale
+
+        # --- Presentation rounding ---
+        step = getattr(self._reg, "step", None)
+        if step:
+            # Number of decimals derived from step (e.g. 0.1 -> 1, 0.01 -> 2)
+            decimals = max(0, len(str(step).split(".")[-1]))
+            return round(value, decimals)
+
+        # Sensible defaults
+        if self._reg.device_class == "temperature":
+            return round(value, 1)
+
+        return round(value, 2)
 
     async def async_set_native_value(self, value: float) -> None:
         if not getattr(self._reg, "writable", False):
