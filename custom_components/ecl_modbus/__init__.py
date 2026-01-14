@@ -16,9 +16,15 @@ from .const import (
     DEFAULT_NAME,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
+    DEFAULT_TCP_PORT,
+    DEFAULT_TRANSPORT,
     CONF_BAUDRATE,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
+    CONF_TRANSPORT,
+    CONF_HOST,
+    CONF_TCP_PORT,
+    TRANSPORT_TCP,
 )
 from .modbus import EclModbusCoordinator, EclModbusHub
 from .registers import ALL_REGISTERS, option_key
@@ -65,11 +71,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Reuse hub if it already exists (prevents serial port lock issues on reload)
     hub = store.get("hub")
     if not isinstance(hub, EclModbusHub):
-        hub = EclModbusHub(
-            port=entry.data[CONF_PORT],
-            baudrate=entry.data.get(CONF_BAUDRATE, DEFAULT_BAUDRATE),
-            slave_id=entry.data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID),
-        )
+        transport = entry.data.get(CONF_TRANSPORT, DEFAULT_TRANSPORT)
+        slave_id = entry.data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)
+
+        if transport == TRANSPORT_TCP:
+            hub = EclModbusHub(
+                transport=transport,
+                slave_id=slave_id,
+                host=entry.data.get(CONF_HOST),
+                tcp_port=entry.data.get(CONF_TCP_PORT, DEFAULT_TCP_PORT),
+            )
+        else:
+            hub = EclModbusHub(
+                transport=transport,
+                slave_id=slave_id,
+                port=entry.data[CONF_PORT],
+                baudrate=entry.data.get(CONF_BAUDRATE, DEFAULT_BAUDRATE),
+            )
+
         store["hub"] = hub
 
     # Create a fresh coordinator every setup (uses current enabled_regs + scan_interval)
