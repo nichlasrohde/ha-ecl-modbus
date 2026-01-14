@@ -25,6 +25,13 @@ from .const import (
     CONF_BAUDRATE,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
+    CONF_TRANSPORT,
+    CONF_HOST,
+    CONF_TCP_PORT,
+    TRANSPORT_SERIAL,
+    TRANSPORT_TCP,
+    DEFAULT_TRANSPORT,
+    DEFAULT_TCP_PORT,
 )
 from .registers import ALL_REGISTERS, option_key
 
@@ -34,28 +41,76 @@ class EclModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    def __init__(self) -> None:
+        self._base: dict = {}
+
     async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
         """First step when a user adds the integration."""
         if user_input is not None:
-            # One controller instance per HA is the common use case
-            await self.async_set_unique_id(DOMAIN)
-            self._abort_if_unique_id_configured()
+            self._base = user_input
+            transport = user_input.get(CONF_TRANSPORT, DEFAULT_TRANSPORT)
 
-            return self.async_create_entry(
-                title=user_input.get(CONF_NAME, DEFAULT_NAME),
-                data=user_input,
-            )
+            if transport == TRANSPORT_TCP:
+                return await self.async_step_tcp()
+
+            return await self.async_step_serial()
 
         data_schema = vol.Schema(
             {
                 vol.Optional(CONF_NAME, default=DEFAULT_NAME): str,
+                vol.Required(CONF_TRANSPORT, default=DEFAULT_TRANSPORT): vol.In(
+                    [TRANSPORT_SERIAL, TRANSPORT_TCP]
+                ),
+            }
+        )
+
+        return self.async_show_form(step_id="user", data_schema=data_schema)
+
+    async def async_step_serial(self, user_input: dict | None = None) -> FlowResult:
+        """Serial (RTU) settings."""
+        if user_input is not None:
+            data = {**self._base, **user_input}
+
+            await self.async_set_unique_id(DOMAIN)
+            self._abort_if_unique_id_configured()
+
+            return self.async_create_entry(
+                title=data.get(CONF_NAME, DEFAULT_NAME),
+                data=data,
+            )
+
+        data_schema = vol.Schema(
+            {
                 vol.Required(CONF_PORT): str,  # e.g. /dev/ttyUSB0
                 vol.Optional(CONF_BAUDRATE, default=DEFAULT_BAUDRATE): int,
                 vol.Optional(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): int,
             }
         )
 
-        return self.async_show_form(step_id="user", data_schema=data_schema)
+        return self.async_show_form(step_id="serial", data_schema=data_schema)
+
+    async def async_step_tcp(self, user_input: dict | None = None) -> FlowResult:
+        """TCP settings."""
+        if user_input is not None:
+            data = {**self._base, **user_input}
+
+            await self.async_set_unique_id(DOMAIN)
+            self._abort_if_unique_id_configured()
+
+            return self.async_create_entry(
+                title=data.get(CONF_NAME, DEFAULT_NAME),
+                data=data,
+            )
+
+        data_schema = vol.Schema(
+            {
+                vol.Required(CONF_HOST): str,  # e.g. 10.10.100.50
+                vol.Optional(CONF_TCP_PORT, default=DEFAULT_TCP_PORT): int,
+                vol.Optional(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): int,
+            }
+        )
+
+        return self.async_show_form(step_id="tcp", data_schema=data_schema)
 
     @staticmethod
     @callback

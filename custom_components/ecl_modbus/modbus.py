@@ -3,7 +3,7 @@ from __future__ import annotations
 """Shared Modbus hub + coordinator for ECL Modbus.
 
 This module contains:
-- EclModbusHub: handles serial connection + low-level read/write
+- EclModbusHub: handles connection + low-level read/write (serial RTU or TCP)
 - EclModbusCoordinator: polls enabled registers on a global interval
 
 Keeping this separate avoids platform import order issues (sensor/number).
@@ -15,46 +15,94 @@ import threading
 from datetime import timedelta
 from typing import Any
 
-from pymodbus.client import ModbusSerialClient
+from pymodbus.client import ModbusSerialClient, ModbusTcpClient
 from pymodbus.exceptions import ModbusIOException
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from .const import (
+    DEFAULT_TCP_PORT,
+    TRANSPORT_TCP,
+)
 from .registers import RegisterDef, RegisterType
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class EclModbusHub:
-    """Handle Modbus RTU communication with the ECL controller."""
+    """Handle Modbus communication with the ECL controller (Serial RTU or TCP)."""
 
-    def __init__(self, port: str, baudrate: int, slave_id: int) -> None:
+    def __init__(
+        self,
+        *,
+        transport: str,
+        slave_id: int,
+        # Serial RTU:
+        port: str | None = None,
+        baudrate: int | None = None,
+        # TCP:
+        host: str | None = None,
+        tcp_port: int | None = None,
+    ) -> None:
+        self._transport = transport
+        self._slave_id = slave_id
+
         self._port = port
         self._baudrate = baudrate
-        self._slave_id = slave_id
-        self._client: ModbusSerialClient | None = None
+
+        self._host = host
+        self._tcp_port = tcp_port
+
+        self._client: ModbusSerialClient | ModbusTcpClient | None = None
         self._lock = threading.Lock()
 
     def _ensure_client(self) -> None:
+        """Create/connect the underlying Modbus client if needed."""
         if self._client is not None and self._client.connected:
             return
 
-        _LOGGER.info(
-            "ECL Modbus: creating ModbusSerialClient on %s @ %s baud",
-            self._port,
-            self._baudrate,
-        )
-
+        # Close previous client if present
         if self._client is not None:
             try:
                 self._client.close()
             except Exception:  # noqa: BLE001
                 pass
+            self._client = None
+
+        # Create correct client type based on transport
+        if self._transport == TRANSPORT_TCP:
+            if not self._host:
+                raise ModbusIOException("TCP transport selected but host is missing")
+
+            port = int(self._tcp_port or DEFAULT_TCP_PORT)
+            _LOGGER.info("ECL Modbus: creating ModbusTcpClient to %s:%s", self._host, port)
+
+            self._client = ModbusTcpClient(
+                host=str(self._host),
+                port=port,
+                timeout=2,
+            )
+
+            if not self._client.connect():
+                raise ModbusIOException(f"Could not connect to {self._host}:{port}")
+
+            return
+
+        # Default: Serial RTU
+        if not self._port:
+            raise ModbusIOException("Serial transport selected but port is missing")
+
+        baudrate = int(self._baudrate or 38400)
+        _LOGGER.info(
+            "ECL Modbus: creating ModbusSerialClient on %s @ %s baud",
+            self._port,
+            baudrate,
+        )
 
         self._client = ModbusSerialClient(
-            port=self._port,
-            baudrate=self._baudrate,
+            port=str(self._port),
+            baudrate=baudrate,
             parity="E",
             stopbits=1,
             bytesize=8,
@@ -77,6 +125,9 @@ class EclModbusHub:
         with self._lock:
             try:
                 self._ensure_client()
+                if self._client is None:
+                    return None
+
                 pdu_address = reg_address_manual - 1
                 result = self._client.read_holding_registers(
                     address=pdu_address,
@@ -84,21 +135,37 @@ class EclModbusHub:
                     device_id=self._slave_id,
                 )
             except ModbusIOException as exc:
-                _LOGGER.error("ECL Modbus: ModbusIOException reading %s: %s", reg_address_manual, exc)
+                _LOGGER.error(
+                    "ECL Modbus: ModbusIOException reading %s: %s",
+                    reg_address_manual,
+                    exc,
+                )
                 self.close()
                 return None
             except Exception as exc:  # noqa: BLE001
-                _LOGGER.error("ECL Modbus: unexpected error reading %s: %s", reg_address_manual, exc)
+                _LOGGER.error(
+                    "ECL Modbus: unexpected error reading %s: %s",
+                    reg_address_manual,
+                    exc,
+                )
                 self.close()
                 return None
 
         if not result or getattr(result, "isError", lambda: True)():
-            _LOGGER.warning("ECL Modbus: Modbus error/no response at %s: %s", reg_address_manual, result)
+            _LOGGER.warning(
+                "ECL Modbus: Modbus error/no response at %s: %s",
+                reg_address_manual,
+                result,
+            )
             return None
 
         regs = getattr(result, "registers", None)
         if not regs:
-            _LOGGER.warning("ECL Modbus: empty register response at %s: %s", reg_address_manual, result)
+            _LOGGER.warning(
+                "ECL Modbus: empty register response at %s: %s",
+                reg_address_manual,
+                result,
+            )
             return None
 
         return list(regs)
@@ -137,6 +204,9 @@ class EclModbusHub:
         """Write a single 16-bit holding register (manual addr is 1-based)."""
         with self._lock:
             self._ensure_client()
+            if self._client is None:
+                raise ModbusIOException("Client not connected")
+
             pdu_address = reg_address_manual - 1
             result = self._client.write_register(
                 address=pdu_address,
@@ -154,6 +224,9 @@ class EclModbusHub:
 
         with self._lock:
             self._ensure_client()
+            if self._client is None:
+                raise ModbusIOException("Client not connected")
+
             pdu_address = reg_address_manual - 1
             result = self._client.write_registers(
                 address=pdu_address,
