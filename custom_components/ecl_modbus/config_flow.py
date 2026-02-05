@@ -139,20 +139,22 @@ class EclModbusOptionsFlow(config_entries.OptionsFlow):
         options = dict(self._entry.options)
 
         if user_input is not None:
-            # IMPORTANT: merge with existing options to avoid losing keys
+            # Merge with existing options so we don't lose old keys
             new_options = {**options, **user_input}
             return self.async_create_entry(title="", data=new_options)
 
         # Default enable behaviour (conservative)
         default_enabled_keys = {"s3_temperature", "s4_temperature"}
 
+        def opt_bool(key: str, default: bool) -> bool:
+            return bool(options.get(key, default))
+
         schema_dict: dict[vol.Marker, object] = {}
 
-        # One checkbox per register (both RO + RW are enabled here;
-        # platforms decide how to expose them: sensors vs numbers/selects)
+        # One checkbox per register
         for reg in ALL_REGISTERS:
             k = option_key(reg.key)
-            default_value = bool(options.get(k, reg.key in default_enabled_keys))
+            default_value = opt_bool(k, reg.key in default_enabled_keys)
             schema_dict[vol.Optional(k, default=default_value)] = bool
 
         # Global polling interval (seconds)

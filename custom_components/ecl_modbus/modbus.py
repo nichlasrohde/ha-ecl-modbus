@@ -185,6 +185,14 @@ class EclModbusHub:
         if signed and raw > 0x7FFF:
             raw -= 0x10000
         return raw
+    
+    def read_uint32(self, reg_address_manual: int) -> int | None:
+        """Read an unsigned 32-bit integer from two holding registers (big-endian)."""
+        regs = self._read_registers(reg_address_manual, count=2)
+        if regs is None:
+            return None
+
+        return (regs[0] << 16) | regs[1]
 
     def read_string(self, reg_address_manual: int, reg_count: int) -> str | None:
         regs = self._read_registers(reg_address_manual, count=reg_count)
@@ -214,7 +222,10 @@ class EclModbusHub:
                 device_id=self._slave_id,
             )
             if not result or getattr(result, "isError", lambda: True)():
-                raise ModbusIOException(f"Write int16 failed at {reg_address_manual}: {result}")
+                raise ModbusIOException(
+                    f"Write int16 failed at {reg_address_manual}: {result}"
+                )
+
 
     def write_float(self, reg_address_manual: int, value: float) -> None:
         """Write a 32-bit float into two holding registers (big-endian)."""
@@ -234,7 +245,36 @@ class EclModbusHub:
                 device_id=self._slave_id,
             )
             if not result or getattr(result, "isError", lambda: True)():
-                raise ModbusIOException(f"Write float failed at {reg_address_manual}: {result}")
+                raise ModbusIOException(
+                    f"Write float failed at {reg_address_manual}: {result}"
+                )
+
+
+    def write_uint32(self, reg_address_manual: int, value: int) -> None:
+        """Write an unsigned 32-bit integer into two holding registers (big-endian)."""
+        v = int(value)
+
+        if v < 0 or v > 0xFFFFFFFF:
+            raise ValueError("UINT32 value out of range (0 .. 4294967295)")
+
+        hi = (v >> 16) & 0xFFFF
+        lo = v & 0xFFFF
+
+        with self._lock:
+            self._ensure_client()
+            if self._client is None:
+                raise ModbusIOException("Client not connected")
+
+            pdu_address = reg_address_manual - 1
+            result = self._client.write_registers(
+                address=pdu_address,
+                values=[hi, lo],
+                device_id=self._slave_id,
+            )
+            if not result or getattr(result, "isError", lambda: True)():
+                raise ModbusIOException(
+                    f"Write uint32 failed at {reg_address_manual}: {result}"
+                )
 
 
 class EclModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -264,6 +304,8 @@ class EclModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     data[reg.key] = self.hub.read_float(reg.address)
                 elif reg.reg_type == RegisterType.INT16:
                     data[reg.key] = self.hub.read_int16(reg.address, signed=reg.signed)
+                elif reg.reg_type == RegisterType.UINT32:
+                    data[reg.key] = self.hub.read_uint32(reg.address)
                 elif reg.reg_type == RegisterType.STRING16:
                     data[reg.key] = self.hub.read_string(reg.address, reg_count=8)
                 elif reg.reg_type == RegisterType.STRING32:

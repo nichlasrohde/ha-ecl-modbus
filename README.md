@@ -10,22 +10,18 @@ It is tested on **ECL 120**, but **ECL 220 uses the same register map**, so it *
 ## 🔧 Features
 Current supported features:
 
-| **Addr** | **RW** | **Name**                               | **Type** | **Unit** | **Min** | **Max** | **Description**                                                                   |
-|----------|--------|----------------------------------------|----------|----------|---------|---------|-----------------------------------------------------------------------------------|
-| 4000     |    R   | **Value of Temperature Sensor S1**     | Float    | °C       | -64     | 192     | Current value of temperature sensor S1                                            |
-| 4010     |    R   | **Value of Temperature Sensor S2**     | Float    | °C       | -64     | 192     | Current value of temperature sensor S2                                            |
-| 4020     |    R   | **Value of Temperature Sensor S3**     | Float    | °C       | -64     | 192     | Current value of temperature sensor S3                                            |
-| 4030     |    R   | **Value of Temperature Sensor S4**     | Float    | °C       | -64     | 192     | Current value of temperature sensor S4                                            |
-| 4040     |    R   | **Value of Temperature Sensor S5**     | Float    | °C       | -64     | 192     | Current value of temperature sensor S5                                            |
-| 4050     |    R   | **Value of Temperature Sensor S6**     | Float    | °C       | -64     | 192     | Current value of temperature sensor S6                                            |
-| 2100     |    R   | **Ethernet IP Address**                | String16 |          |         |         | Ethernet IP Address                                                               |
-| 2110     |    R   | **Ethernet MAC Address**               | String32 |          |         |         | Ethernet MAC Address                                                              |
-| 21000    |   RW   | **Operation Mode**                     | UInt16   |          | 0       | 10      | Current operation mode: 0 = Automatic 1 = Comfort 2 = Saving 3 = Frost protection |
-| 21001    |    R   | **Operation Status**                   | UInt16   |          | 0       | 10      | Current operation status: 0 = Comfort 1 = Saving 2 = Frost Protection             |
-| 21200    |    R   | **Heat Flow Temperature Reference**    | Float    | °C       | 0       | 150     | Calculated heat flow reference                                                    |
-| 21206    |    R   | **Heat Weather Compensated Reference** | Float    | °C       | -150    | 150     | Calculated value from the weather compensator                                     |
-| 21210    |   RW   | **Heat Return Temperature Reference**  | Float    | °C       | 5       | 150     | Reference for Return Limiter                                                      |
-| 21700    |    R   | **Heat Valve Position**                | Float    | %        | 0       | 1       | Scale 100 – Estimated position of motor                                           |
+The list of supported registers is continuously expanding.
+
+The authoritative source for supported registers is:
+- `custom_components/ecl_modbus/registers.py`
+
+Each register definition includes:
+- Modbus address
+- Read / Write support
+- Data type
+- Unit
+- Scaling
+- Min / Max / Step (where applicable)
 
 ### Fully configurable
 - Enable/disable each sensor individually  
@@ -145,6 +141,20 @@ GitHub:
 
 ---
 
+## ☕ Support the project
+
+This project is developed and maintained in my spare time as a hobby.
+
+If you find it useful and would like to support continued development,  
+you’re very welcome to do so — completely optional.
+
+🇩🇰 **MobilePay (Denmark):** `9316PV`
+[Support via MobilePay](https://qr.mobilepay.dk/box/82f3141c-2907-485e-b47f-518f9d789297/pay-in)
+
+Thank you for the support ❤️
+
+---
+
 ## 📘 Official Danfoss Modbus Documentation
 
 This integration is based on the official Modbus register list from Danfoss.
@@ -158,3 +168,27 @@ The document is shared with permission from Danfoss.
 
 ## 📄 License
 MIT License
+
+## ⚠️ Disclaimer
+
+This integration is provided **as-is**, without any guarantees or warranties of any kind.
+
+- The author is **not affiliated with Danfoss**.
+- The author is **not a professional developer**.
+- This integration may contain bugs, incorrect register mappings, or incomplete implementations.
+- Writing values to the controller **may affect system behavior** and could potentially cause malfunction or damage if used incorrectly.
+
+**You are fully responsible for:**
+- Verifying register addresses and values
+- Testing changes in a safe environment
+- Ensuring that critical heating functions remain safe and operational
+
+The author takes **no responsibility or liability** for:
+- Damaged equipment
+- Incorrect heating behavior
+- Increased energy consumption
+- Loss of comfort or system downtime
+
+If you are unsure about a parameter or register — **do not write to it**.
+
+Use this integration **at your own risk**.
