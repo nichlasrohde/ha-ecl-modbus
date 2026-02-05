@@ -21,7 +21,7 @@ Each register definition includes:
 - Data type
 - Unit
 - Scaling
-- Min / Max / Step (where applicable)                                   |
+- Min / Max / Step (where applicable)
 
 ### Fully configurable
 - Enable/disable each sensor individually  
@@ -138,6 +138,20 @@ This project is community-driven — PRs, testing, and feedback are highly appre
 
 GitHub:  
 👉 https://github.com/nichlasrohde/ha-ecl-modbus
+
+---
+
+## ☕ Support the project
+
+This project is developed and maintained in my spare time as a hobby.
+
+If you find it useful and would like to support continued development,  
+you’re very welcome to do so — completely optional.
+
+🇩🇰 **MobilePay (Denmark):** `9316PV`
+[Support via MobilePay](https://qr.mobilepay.dk/box/82f3141c-2907-485e-b47f-518f9d789297/pay-in)
+
+Thank you for the support ❤️
 
 ---
 
