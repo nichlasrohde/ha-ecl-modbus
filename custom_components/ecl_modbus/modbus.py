@@ -185,6 +185,14 @@ class EclModbusHub:
         if signed and raw > 0x7FFF:
             raw -= 0x10000
         return raw
+    
+    def read_uint32(self, reg_address_manual: int) -> int | None:
+        """Read an unsigned 32-bit integer from two holding registers (big-endian)."""
+        regs = self._read_registers(reg_address_manual, count=2)
+        if regs is None:
+            return None
+
+        return (regs[0] << 16) | regs[1]
 
     def read_string(self, reg_address_manual: int, reg_count: int) -> str | None:
         regs = self._read_registers(reg_address_manual, count=reg_count)
@@ -264,6 +272,8 @@ class EclModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     data[reg.key] = self.hub.read_float(reg.address)
                 elif reg.reg_type == RegisterType.INT16:
                     data[reg.key] = self.hub.read_int16(reg.address, signed=reg.signed)
+                elif reg.reg_type == RegisterType.UINT32:
+                    data[reg.key] = self.hub.read_uint32(reg.address)
                 elif reg.reg_type == RegisterType.STRING16:
                     data[reg.key] = self.hub.read_string(reg.address, reg_count=8)
                 elif reg.reg_type == RegisterType.STRING32:

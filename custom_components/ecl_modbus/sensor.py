@@ -65,7 +65,7 @@ class EclModbusRegisterSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self) -> Any:
         data = self.coordinator.data
-        if not data:
+        if data is None:
             return None
 
         raw = data.get(self._reg.key)
@@ -85,9 +85,31 @@ class EclModbusRegisterSensor(CoordinatorEntity, SensorEntity):
                 return None
             return value_map.get(code, str(code))
 
-        # Numeric types
+        scale = float(getattr(self._reg, "scale", 1.0) or 1.0)
+
+        # Integer-ish types: keep integers as integers (avoid 1234.0)
+        if self._reg.reg_type in (RegisterType.INT16, RegisterType.UINT32):
+            try:
+                n = int(raw)
+            except (TypeError, ValueError):
+                try:
+                    n = int(float(raw))
+                except (TypeError, ValueError):
+                    return None
+
+            if scale == 1.0:
+                return n
+
+            # If scaling is used for an int-type, return scaled value with sensible rounding
+            value = n * scale
+            decimals = _decimals_from_step(getattr(self._reg, "step", None))
+            if decimals is not None:
+                return round(value, decimals)
+            return round(value, 6)
+
+        # Float types (and any other numeric we treat as float)
         try:
-            value = float(raw) * float(getattr(self._reg, "scale", 1.0) or 1.0)
+            value = float(raw) * scale
         except (TypeError, ValueError):
             return None
 

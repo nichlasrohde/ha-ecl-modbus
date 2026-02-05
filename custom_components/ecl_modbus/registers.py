@@ -23,6 +23,7 @@ class RegisterType(str, Enum):
     """How a register value should be decoded."""
     FLOAT = "float"          # 2 x 16-bit registers -> IEEE754 float (big-endian)
     INT16 = "int16"          # 1 x 16-bit register -> signed/unsigned int
+    UINT32 = "uint32"        # 2 x 16-bit registers -> unsigned 32-bit int (big-endian)
     STRING16 = "string16"    # 16 chars (typically 8 registers)
     STRING32 = "string32"    # 32 chars (typically 16 registers)
 
@@ -252,18 +253,6 @@ REG_CIRCUIT1_SUPPLY: Final[list[RegisterDef]] = [
         max_value=150,
         step=1.0,
     ),
-    # DK: Kurve for kreds 1
-    RegisterDef(
-        key="circuit1_heating_curve",
-        name="Circuit 1 heating curve",
-        address=21246,
-        reg_type=RegisterType.FLOAT,
-        writable=True,
-        min_value=0.1,
-        max_value=4.0,
-        step=0.1,
-        icon="mdi:chart-line",
-    ),
     # DK: Fremløbstemperatur ved -30°C for kreds 1
     RegisterDef(
         key="circuit1_supply_temp_at_minus30",
@@ -272,10 +261,7 @@ REG_CIRCUIT1_SUPPLY: Final[list[RegisterDef]] = [
         reg_type=RegisterType.FLOAT,
         unit="°C",
         device_class="temperature",
-        writable=True,
-        min_value=5,
-        max_value=150,
-        step=1.0,
+        writable=False,
     ),
     # DK: Fremløbstemperatur ved -15°C for kreds 1
     RegisterDef(
@@ -285,10 +271,7 @@ REG_CIRCUIT1_SUPPLY: Final[list[RegisterDef]] = [
         reg_type=RegisterType.FLOAT,
         unit="°C",
         device_class="temperature",
-        writable=True,
-        min_value=5,
-        max_value=150,
-        step=1.0,
+        writable=False,
     ),
     # DK: Fremløbstemperatur ved -5°C for kreds 1
     RegisterDef(
@@ -298,10 +281,7 @@ REG_CIRCUIT1_SUPPLY: Final[list[RegisterDef]] = [
         reg_type=RegisterType.FLOAT,
         unit="°C",
         device_class="temperature",
-        writable=True,
-        min_value=5,
-        max_value=150,
-        step=1.0,
+        writable=False,
     ),
     # DK: Fremløbstemperatur ved 0°C for kreds 1
     RegisterDef(
@@ -311,10 +291,7 @@ REG_CIRCUIT1_SUPPLY: Final[list[RegisterDef]] = [
         reg_type=RegisterType.FLOAT,
         unit="°C",
         device_class="temperature",
-        writable=True,
-        min_value=5,
-        max_value=150,
-        step=1.0,
+        writable=False,
     ),
     # DK: Fremløbstemperatur ved 5°C for kreds 1
     RegisterDef(
@@ -324,10 +301,7 @@ REG_CIRCUIT1_SUPPLY: Final[list[RegisterDef]] = [
         reg_type=RegisterType.FLOAT,
         unit="°C",
         device_class="temperature",
-        writable=True,
-        min_value=5,
-        max_value=150,
-        step=1.0,
+        writable=False,
     ),
     # DK: Fremløbstemperatur ved 15°C for kreds 1
     RegisterDef(
@@ -337,12 +311,154 @@ REG_CIRCUIT1_SUPPLY: Final[list[RegisterDef]] = [
         reg_type=RegisterType.FLOAT,
         unit="°C",
         device_class="temperature",
-        writable=True,
-        min_value=5,
-        max_value=150,
-        step=1.0,
+        writable=False,
     ),
 ]
+
+
+# -----------------------------------------------------------------------------
+# Circuit 1 – PID tuning / regulation parameters
+# DK: Reguleringsparametre for kreds 1
+# -----------------------------------------------------------------------------
+REG_CIRCUIT1_PID_TUNING: Final[list[RegisterDef]] = [
+    RegisterDef(
+        key="circuit1_pid_xp_low",
+        name="Circuit 1 PID Xp (low)",
+        address=21446,
+        reg_type=RegisterType.INT16,   # UInt16 in docs -> use INT16 with signed=False
+        signed=False,
+        unit="K",
+        writable=True,
+        min_value=0,
+        max_value=250,
+        step=1,
+        icon="mdi:tune",
+    ),
+    RegisterDef(
+        key="circuit1_pid_xp_high",
+        name="Circuit 1 PID Xp (high)",
+        address=21447,
+        reg_type=RegisterType.INT16,   # UInt16 in docs -> use INT16 with signed=False
+        signed=False,
+        unit="K",
+        writable=True,
+        min_value=0,
+        max_value=250,
+        step=1,
+        icon="mdi:tune",
+    ),
+    RegisterDef(
+        key="circuit1_pid_tn",
+        name="Circuit 1 PID Tn (adaptation time)",
+        address=21448,
+        reg_type=RegisterType.INT16,   # UInt16 in docs -> use INT16 with signed=False
+        signed=False,
+        unit="s",
+        device_class="duration",
+        writable=True,
+        min_value=0,
+        max_value=999,
+        step=1,
+        icon="mdi:timer-outline",
+    ),
+    RegisterDef(
+        key="circuit1_pid_deadband",
+        name="Circuit 1 PID deadband (Nz)",
+        address=21458,
+        reg_type=RegisterType.FLOAT,
+        unit="K",
+        writable=True,
+        min_value=0.0,
+        max_value=20.0,
+        step=1.0,
+        scale=2.0,  # scale=2.0 due to 0.5 K resolution in ECL (Modbus value * 2 = UI value)
+        icon="mdi:arrow-expand-horizontal",
+    ),
+]
+
+
+# -----------------------------------------------------------------------------
+# Comfort / Saving / Boost (room limiter + boost)
+# -----------------------------------------------------------------------------
+REG_COMFORT_SAVING_BOOST: Final[list[RegisterDef]] = [
+    # DK: Komforttemperatur references
+    RegisterDef(
+        key="heat_room_comfort_relative_reference",
+        name="Heat room comfort relative reference",
+        address=21212,
+        reg_type=RegisterType.FLOAT,
+        unit="°C",
+        device_class="temperature",
+        writable=True,
+        min_value=0.5,
+        max_value=5.0,
+        step=0.5,
+        icon="mdi:home-thermometer",
+    ),
+    # DK: Sparetemperatur references
+    RegisterDef(
+        key="heat_room_saving_relative_reference",
+        name="Heat room saving relative reference",
+        address=21214,
+        reg_type=RegisterType.FLOAT,
+        unit="°C",
+        device_class="temperature",
+        writable=True,
+        min_value=0.5,
+        max_value=5.0,
+        step=0.5,
+        icon="mdi:home-thermometer-outline",
+    ),
+
+    # Boost
+    RegisterDef(
+        key="boost_active",
+        name="Boost active",
+        address=21003,
+        reg_type=RegisterType.INT16,   # UInt16 in docs -> use INT16 with signed=False
+        signed=False,
+        writable=True,
+        value_map={
+            0: "Off",
+            1: "On",
+        },
+        icon="mdi:rocket-launch",
+    ),
+    RegisterDef(
+        key="boost_remaining_time",
+        name="Boost remaining time",
+        address=21004,
+        reg_type=RegisterType.FLOAT,
+        unit="s",
+        writable=False,
+        icon="mdi:timer-outline",
+    ),
+    RegisterDef(
+        key="boost_period",
+        name="Boost period",
+        address=21438,
+        reg_type=RegisterType.UINT32,
+        unit="s",
+        writable=True,
+        min_value=0,
+        max_value=86400,
+        step=60,
+        icon="mdi:timer-cog-outline",
+    ),
+    RegisterDef(
+        key="boost_added_temperature",
+        name="Boost added temperature",
+        address=21440,
+        reg_type=RegisterType.FLOAT,
+        unit="K",
+        writable=True,
+        min_value=0.0,
+        max_value=25.0,
+        step=1.0,
+        icon="mdi:thermometer-plus",
+    ),
+]
+
 
 # -----------------------------------------------------------------------------
 # Single list of all registers we *can* expose.
@@ -354,6 +470,8 @@ ALL_REGISTERS: Final[list[RegisterDef]] = [
     *REG_DIAGNOSTICS,
     *REG_EXTRAS,
     *REG_CIRCUIT1_SUPPLY,
+    *REG_CIRCUIT1_PID_TUNING,
+    *REG_COMFORT_SAVING_BOOST,
 ]
 
 
