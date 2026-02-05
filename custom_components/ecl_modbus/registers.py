@@ -222,6 +222,129 @@ REG_EXTRAS: Final[list[RegisterDef]] = [
 ]
 
 # -----------------------------------------------------------------------------
+# Circuit 1 – Supply temperature (flow temperature / heating curve)
+# DK: Fremløbstemperatur for kreds 1
+# -----------------------------------------------------------------------------
+REG_CIRCUIT1_SUPPLY: Final[list[RegisterDef]] = [
+    # DK: Min. fremløbstemperatur for kreds 1
+    RegisterDef(
+        key="circuit1_supply_temp_min",
+        name="Circuit 1 minimum supply temperature",
+        address=21202,
+        reg_type=RegisterType.FLOAT,
+        unit="°C",
+        device_class="temperature",
+        writable=True,
+        min_value=5,
+        max_value=150,
+        step=1.0,
+    ),
+    # DK: Max. fremløbstemperatur for kreds 1
+    RegisterDef(
+        key="circuit1_supply_temp_max",
+        name="Circuit 1 maximum supply temperature",
+        address=21204,
+        reg_type=RegisterType.FLOAT,
+        unit="°C",
+        device_class="temperature",
+        writable=True,
+        min_value=5,
+        max_value=150,
+        step=1.0,
+    ),
+    # DK: Kurve for kreds 1
+    RegisterDef(
+        key="circuit1_heating_curve",
+        name="Circuit 1 heating curve",
+        address=21246,
+        reg_type=RegisterType.FLOAT,
+        writable=True,
+        min_value=0.1,
+        max_value=4.0,
+        step=0.1,
+        icon="mdi:chart-line",
+    ),
+    # DK: Fremløbstemperatur ved -30°C for kreds 1
+    RegisterDef(
+        key="circuit1_supply_temp_at_minus30",
+        name="Circuit 1 supply temperature at -30 °C",
+        address=21232,
+        reg_type=RegisterType.FLOAT,
+        unit="°C",
+        device_class="temperature",
+        writable=True,
+        min_value=5,
+        max_value=150,
+        step=1.0,
+    ),
+    # DK: Fremløbstemperatur ved -15°C for kreds 1
+    RegisterDef(
+        key="circuit1_supply_temp_at_minus15",
+        name="Circuit 1 supply temperature at -15 °C",
+        address=21234,
+        reg_type=RegisterType.FLOAT,
+        unit="°C",
+        device_class="temperature",
+        writable=True,
+        min_value=5,
+        max_value=150,
+        step=1.0,
+    ),
+    # DK: Fremløbstemperatur ved -5°C for kreds 1
+    RegisterDef(
+        key="circuit1_supply_temp_at_minus5",
+        name="Circuit 1 supply temperature at -5 °C",
+        address=21236,
+        reg_type=RegisterType.FLOAT,
+        unit="°C",
+        device_class="temperature",
+        writable=True,
+        min_value=5,
+        max_value=150,
+        step=1.0,
+    ),
+    # DK: Fremløbstemperatur ved 0°C for kreds 1
+    RegisterDef(
+        key="circuit1_supply_temp_at_0",
+        name="Circuit 1 supply temperature at 0 °C",
+        address=21238,
+        reg_type=RegisterType.FLOAT,
+        unit="°C",
+        device_class="temperature",
+        writable=True,
+        min_value=5,
+        max_value=150,
+        step=1.0,
+    ),
+    # DK: Fremløbstemperatur ved 5°C for kreds 1
+    RegisterDef(
+        key="circuit1_supply_temp_at_5",
+        name="Circuit 1 supply temperature at 5 °C",
+        address=21240,
+        reg_type=RegisterType.FLOAT,
+        unit="°C",
+        device_class="temperature",
+        writable=True,
+        min_value=5,
+        max_value=150,
+        step=1.0,
+    ),
+    # DK: Fremløbstemperatur ved 15°C for kreds 1
+    RegisterDef(
+        key="circuit1_supply_temp_at_15",
+        name="Circuit 1 supply temperature at 15 °C",
+        address=21242,
+        reg_type=RegisterType.FLOAT,
+        unit="°C",
+        device_class="temperature",
+        writable=True,
+        min_value=5,
+        max_value=150,
+        step=1.0,
+    ),
+]
+
+# -----------------------------------------------------------------------------
 # Single list of all registers we *can* expose.
 # The integration can later decide which ones to enable via options.
 # -----------------------------------------------------------------------------
@@ -230,6 +353,7 @@ ALL_REGISTERS: Final[list[RegisterDef]] = [
     *REG_SENSORS,
     *REG_DIAGNOSTICS,
     *REG_EXTRAS,
+    *REG_CIRCUIT1_SUPPLY,
 ]
 
 

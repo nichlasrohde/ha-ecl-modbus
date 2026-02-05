@@ -152,8 +152,17 @@ class EclModbusOptionsFlow(config_entries.OptionsFlow):
         # platforms decide how to expose them: sensors vs numbers/selects)
         for reg in ALL_REGISTERS:
             k = option_key(reg.key)
-            default_value = bool(options.get(k, reg.key in default_enabled_keys))
-            schema_dict[vol.Optional(k, default=default_value)] = bool
+            default_value = opt_bool(k, reg.key in default_enabled_keys)
+
+            label = f"{reg.name} ({reg.address})"
+
+            schema_dict[
+                vol.Optional(
+                    k,
+                    default=default_value,
+                    description={"name": label},
+                )
+            ] = bool
 
         # Global polling interval (seconds)
         schema_dict[
