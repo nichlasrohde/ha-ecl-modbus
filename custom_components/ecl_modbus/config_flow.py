@@ -139,9 +139,13 @@ class EclModbusOptionsFlow(config_entries.OptionsFlow):
         options = dict(self._entry.options)
 
         if user_input is not None:
-            # IMPORTANT: merge with existing options to avoid losing keys
+            # Merge with existing options to avoid losing keys
             new_options = {**options, **user_input}
             return self.async_create_entry(title="", data=new_options)
+
+        def opt_bool(key: str, default: bool) -> bool:
+            """Read a boolean option with a default."""
+            return bool(options.get(key, default))
 
         # Default enable behaviour (conservative)
         default_enabled_keys = {"s3_temperature", "s4_temperature"}
