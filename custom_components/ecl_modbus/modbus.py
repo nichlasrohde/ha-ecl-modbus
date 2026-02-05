@@ -222,7 +222,10 @@ class EclModbusHub:
                 device_id=self._slave_id,
             )
             if not result or getattr(result, "isError", lambda: True)():
-                raise ModbusIOException(f"Write int16 failed at {reg_address_manual}: {result}")
+                raise ModbusIOException(
+                    f"Write int16 failed at {reg_address_manual}: {result}"
+                )
+
 
     def write_float(self, reg_address_manual: int, value: float) -> None:
         """Write a 32-bit float into two holding registers (big-endian)."""
@@ -242,7 +245,36 @@ class EclModbusHub:
                 device_id=self._slave_id,
             )
             if not result or getattr(result, "isError", lambda: True)():
-                raise ModbusIOException(f"Write float failed at {reg_address_manual}: {result}")
+                raise ModbusIOException(
+                    f"Write float failed at {reg_address_manual}: {result}"
+                )
+
+
+    def write_uint32(self, reg_address_manual: int, value: int) -> None:
+        """Write an unsigned 32-bit integer into two holding registers (big-endian)."""
+        v = int(value)
+
+        if v < 0 or v > 0xFFFFFFFF:
+            raise ValueError("UINT32 value out of range (0 .. 4294967295)")
+
+        hi = (v >> 16) & 0xFFFF
+        lo = v & 0xFFFF
+
+        with self._lock:
+            self._ensure_client()
+            if self._client is None:
+                raise ModbusIOException("Client not connected")
+
+            pdu_address = reg_address_manual - 1
+            result = self._client.write_registers(
+                address=pdu_address,
+                values=[hi, lo],
+                device_id=self._slave_id,
+            )
+            if not result or getattr(result, "isError", lambda: True)():
+                raise ModbusIOException(
+                    f"Write uint32 failed at {reg_address_manual}: {result}"
+                )
 
 
 class EclModbusCoordinator(DataUpdateCoordinator[dict[str, Any]]):

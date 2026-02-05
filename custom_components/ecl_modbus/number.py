@@ -165,6 +165,9 @@ class EclModbusRegisterNumber(CoordinatorEntity, NumberEntity):
                 self._hub.write_float(self._reg.address, float(raw_value))
             elif self._reg.reg_type == RegisterType.INT16:
                 self._hub.write_int16(self._reg.address, int(round(raw_value)))
+            elif self._reg.reg_type == RegisterType.UINT32:
+                # UINT32 is written as 2x16-bit registers (big-endian) in modbus.py hub
+                self._hub.write_uint32(self._reg.address, int(round(raw_value)))
             else:
                 raise ValueError(f"Unsupported writable type: {self._reg.reg_type}")
         except Exception as exc:  # noqa: BLE001
@@ -202,8 +205,8 @@ async def async_setup_entry(
     rw_regs = [
         r for r in regs
         if getattr(r, "writable", False)
-        and r.reg_type in (RegisterType.FLOAT, RegisterType.INT16)
-        and not getattr(r, "value_map", None)  # <-- VIGTIG
+        and r.reg_type in (RegisterType.FLOAT, RegisterType.INT16, RegisterType.UINT32)
+        and not getattr(r, "value_map", None)  # keep enums out of Number (they belong in Select)
     ]
 
     async_add_entities(
