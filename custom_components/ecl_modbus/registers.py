@@ -123,6 +123,15 @@ REG_SENSORS: Final[list[RegisterDef]] = [
         device_class="temperature",
         state_class="measurement",
     ),
+    RegisterDef(
+        key="outside_temperature",
+        name="Outside temperature",
+        address=21102,
+        reg_type=RegisterType.FLOAT,
+        unit="°C",
+        device_class="temperature",
+        state_class="measurement",
+    ),
 ]
 
 # -----------------------------------------------------------------------------
