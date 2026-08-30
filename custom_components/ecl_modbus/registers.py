@@ -154,6 +154,14 @@ REG_DIAGNOSTICS: Final[list[RegisterDef]] = [
         state_class=None,
         icon="mdi:lan",
     ),
+    RegisterDef(
+        key="product_serial_number",
+        name="Product serial number",
+        address=1,
+        reg_type=RegisterType.STRING16,
+        state_class=None,
+        icon="mdi:barcode",
+    ),
 ]
 
 # -----------------------------------------------------------------------------
@@ -169,6 +177,17 @@ REG_EXTRAS: Final[list[RegisterDef]] = [
         device_class=None,
         state_class="measurement",
         icon="mdi:valve",
+    ),
+    RegisterDef(
+        key="heat_pump_state",
+        name="Heat pump state",
+        address=21702,
+        reg_type=RegisterType.INT16,
+        value_map={
+            0: "Off",
+            1: "On",
+        },
+        icon="mdi:pump",
     ),
     RegisterDef(
         key="heat_flow_reference",
