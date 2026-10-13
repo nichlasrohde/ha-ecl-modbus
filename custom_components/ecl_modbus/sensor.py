@@ -31,12 +31,15 @@ def _decimals_from_step(step: float | None) -> int | None:
 class EclModbusRegisterSensor(CoordinatorEntity, SensorEntity):
     """Generic sensor exposing one read-only register."""
 
-    def __init__(self, coordinator, entry_title: str, reg: RegisterDef) -> None:
+    def __init__(self, coordinator, entry_id: str, entry_title: str, reg: RegisterDef) -> None:
         super().__init__(coordinator)
         self._reg = reg
 
+        self._entry_id = entry_id
+        self._entry_title = entry_title
+
         self._attr_name = f"{entry_title} {reg.name}"
-        self._attr_unique_id = f"{DOMAIN}_{reg.key}"
+        self._attr_unique_id = f"{entry_id}_{reg.key}"
 
         self._attr_native_unit_of_measurement = reg.unit
         self._attr_device_class = reg.device_class
@@ -56,8 +59,8 @@ class EclModbusRegisterSensor(CoordinatorEntity, SensorEntity):
     @property
     def device_info(self) -> dict:
         return {
-            "identifiers": {(DOMAIN, "ecl_modbus")},
-            "name": "ECL Modbus",
+            "identifiers": {(DOMAIN, self._entry_id)},
+            "name": self._entry_title,
             "manufacturer": "Danfoss",
             "model": "ECL 120/220",
         }
@@ -139,6 +142,6 @@ async def async_setup_entry(
 
     ro_regs = [r for r in regs if not getattr(r, "writable", False)]
     async_add_entities(
-        [EclModbusRegisterSensor(coordinator, entry_title, r) for r in ro_regs],
+        [EclModbusRegisterSensor(coordinator, entry.entry_id, entry_title, r) for r in ro_regs],
         update_before_add=False,
     )
